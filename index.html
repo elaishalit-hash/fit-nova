@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fit Nova — Workout &amp; Meal Tracker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><rect width=%2224%22 height=%2224%22 rx=%226%22 fill=%22%230B0D0C%22/><path d=%22M4 9v6M2 12h2M9 10v4M9 12h6M15 10v4M20 9v6M22 12h-2%22 stroke=%22%23B4FF3E%22 stroke-width=%222.2%22 stroke-linecap=%22round%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: {
+            950: '#0A0C0B', 900: '#121512', 850: '#171B18', 800: '#1B211C',
+            700: '#262E27', 600: '#374035', 500: '#4E594F', 400: '#6E7A6F',
+            300: '#98A399', 200: '#C4CCC3', 100: '#E5E9E2', 50: '#F6F8F4'
+          },
+          volt: { 300: '#CCFF7A', 400: '#B4FF3E', 500: '#9FE81E', 600: '#7EC400' },
+          ember: { 300: '#FFB08B', 400: '#FF8A5B', 500: '#FF6B3D', 600: '#E24E1F' },
+          plum:  { 300: '#C3BFFF', 400: '#9C8CFF', 500: '#7D6BFF' }
+        },
+        fontFamily: {
+          display: ['"Space Grotesk"', 'sans-serif'],
+          body: ['Inter', 'sans-serif']
+        },
+        transitionTimingFunction: { spring: 'cubic-bezier(.2,1.15,.3,1)' },
+        boxShadow: {
+          card: '0 1px 1px rgba(0,0,0,.5), 0 12px 28px -14px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.03)',
+          float: '0 4px 8px rgba(0,0,0,.45), 0 24px 48px -16px rgba(0,0,0,.7)',
+          voltGlow: '0 8px 24px -6px rgba(180,255,62,.35)'
+        }
+      }
+    }
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-feature-settings: "ss01"; }
+  .grain {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .05; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .bg-glow {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(60% 50% at 15% 0%, rgba(180,255,62,.10), transparent 60%),
+      radial-gradient(50% 40% at 100% 20%, rgba(255,107,61,.08), transparent 60%),
+      radial-gradient(70% 50% at 50% 100%, rgba(124,107,255,.07), transparent 60%);
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #262E27; border-radius: 8px; border: 2px solid #0A0C0B; }
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1) opacity(.6); cursor: pointer; }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { opacity: .5; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scaleIn { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(10px) scale(.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .animate-fadeIn { animation: fadeIn .18s ease-spring both; }
+  .animate-scaleIn { animation: scaleIn .22s cubic-bezier(.2,1.15,.3,1) both; }
+  .animate-slideUp { animation: slideUp .32s cubic-bezier(.2,1.15,.3,1) both; }
+  .animate-toastIn { animation: toastIn .25s cubic-bezier(.2,1.15,.3,1) both; }
+
+  .field {
+    width: 100%; background: #171B18; border: 1px solid #262E27; color: #F6F8F4;
+    border-radius: .7rem; padding: .6rem .8rem; font-size: .875rem; outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .field::placeholder { color: #6E7A6F; }
+  .field:focus { border-color: #B4FF3E; box-shadow: 0 0 0 3px rgba(180,255,62,.15); }
+  .field-label { display:block; font-size:.72rem; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:#98A399; margin-bottom:.35rem; }
+
+  .nav-pill { transition: color .15s ease, background-color .15s ease, transform .15s cubic-bezier(.2,1.15,.3,1); }
+  .nav-pill:active { transform: scale(.96); }
+  .icon-btn { transition: background-color .15s ease, transform .15s cubic-bezier(.2,1.15,.3,1), color .15s ease; }
+  .icon-btn:hover { background-color: #1B211C; }
+  .icon-btn:active { transform: scale(.92); }
+  .icon-btn:focus-visible, .nav-pill:focus-visible, .btn:focus-visible, .field:focus-visible { outline: 2px solid #B4FF3E; outline-offset: 2px; }
+
+  .btn { transition: transform .15s cubic-bezier(.2,1.15,.3,1), box-shadow .15s ease, background-color .15s ease, color .15s ease, opacity .15s ease; }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: #B4FF3E; color: #0A0C0B; box-shadow: 0 8px 24px -8px rgba(180,255,62,.4); }
+  .btn-primary:hover { background: #CCFF7A; }
+  .btn-ghost { background: transparent; color: #C4CCC3; border: 1px solid #262E27; }
+  .btn-ghost:hover { background: #171B18; color: #F6F8F4; }
+  .btn-danger { color: #FF8A5B; }
+  .btn-danger:hover { background: rgba(255,107,61,.1); }
+
+  .btn-scan {
+    background: linear-gradient(135deg, #8B7BFF 0%, #C6699A 50%, #FF6B3D 100%);
+    color: #fff;
+    box-shadow: 0 1px 1px rgba(0,0,0,.3), 0 10px 26px -10px rgba(139,123,255,.55), 0 6px 16px -8px rgba(255,107,61,.4);
+  }
+  .btn-scan:hover { filter: brightness(1.08); }
+  @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(1.6); } }
+  .pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
+
+  .card { background: linear-gradient(180deg, rgba(27,33,28,.9), rgba(23,27,24,.85)); border: 1px solid #1B211C; }
+
+  .modal-backdrop { background: rgba(6,8,7,.7); backdrop-filter: blur(6px); }
+
+  .bar-track { background: #1B211C; border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; transition: width .5s cubic-bezier(.2,1.15,.3,1); }
+
+  .tab-underline { position: relative; }
+  .exercise-block { border: 1px solid #262E27; background: #121512; }
+
+  @media (max-width: 767px) {
+    .view-scroll { padding-bottom: 5.5rem; }
+  }
+</style>
+</head>
+<body class="bg-ink-950 text-ink-50 font-body min-h-screen relative">
+<div class="bg-glow"></div>
+<div class="grain"></div>
+
+<!-- ============ AUTH GATE ============ -->
+<div id="authView" class="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
+  <div class="w-full max-w-sm">
+    <div class="flex items-center gap-2.5 justify-center mb-8">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-volt-300 via-volt-400 to-volt-600 ring-1 ring-inset ring-white/25 flex items-center justify-center shadow-voltGlow">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#0A0C0B" stroke-width="2.3" stroke-linecap="round"><path d="M4 9v6M2 12h2M9 10v4M9 12h6M15 10v4M20 9v6M22 12h-2"/></svg>
+      </div>
+      <span class="font-display font-bold text-xl tracking-tight"><span class="text-ink-50">FIT</span> <span class="text-volt-400">NOVA</span></span>
+    </div>
+
+    <div class="card rounded-2xl shadow-card p-6 animate-scaleIn">
+      <div id="signUpPanel">
+        <h1 class="font-display text-xl font-bold mb-1">Create your account</h1>
+        <p class="text-sm text-ink-400 mb-5">Track workouts, progress, and meals in one place.</p>
+        <form id="signUpForm" class="space-y-3.5" novalidate>
+          <div>
+            <label class="field-label">Name</label>
+            <input required name="name" class="field" placeholder="Alex Rivera" />
+          </div>
+          <div>
+            <label class="field-label">Email</label>
+            <input required type="email" name="email" class="field" placeholder="you@example.com" />
+          </div>
+          <div>
+            <label class="field-label">Password</label>
+            <input required type="password" name="password" minlength="6" class="field" placeholder="At least 6 characters" />
+          </div>
+          <div>
+            <label class="field-label">Confirm password</label>
+            <input required type="password" name="confirm" class="field" placeholder="Re-enter password" />
+          </div>
+          <p id="signUpError" class="hidden text-xs text-ember-400"></p>
+          <button type="submit" class="btn btn-primary w-full py-2.5 rounded-xl text-sm font-semibold mt-1">Create Account</button>
+        </form>
+        <p class="text-xs text-ink-400 text-center mt-4">Already have an account? <button type="button" id="gotoSignIn" class="text-volt-400 font-medium hover:text-volt-300">Sign in</button></p>
+      </div>
+
+      <div id="signInPanel" class="hidden">
+        <h1 class="font-display text-xl font-bold mb-1">Welcome back</h1>
+        <p class="text-sm text-ink-400 mb-5" id="signInSubtitle">Sign in to continue.</p>
+        <form id="signInForm" class="space-y-3.5" novalidate>
+          <div>
+            <label class="field-label">Email</label>
+            <input required type="email" name="email" class="field" placeholder="you@example.com" />
+          </div>
+          <div>
+            <label class="field-label">Password</label>
+            <input required type="password" name="password" class="field" placeholder="Your password" />
+          </div>
+          <p id="signInError" class="hidden text-xs text-ember-400"></p>
+          <button type="submit" class="btn btn-primary w-full py-2.5 rounded-xl text-sm font-semibold mt-1">Sign In</button>
+        </form>
+        <p class="text-xs text-ink-400 text-center mt-4">New here? <button type="button" id="gotoSignUp" class="text-volt-400 font-medium hover:text-volt-300">Create an account</button></p>
+        <p class="text-[11px] text-ink-500 text-center mt-2">Forgot your password? <button type="button" id="resetAccountBtn" class="text-ember-400 hover:text-ember-300">Reset local account</button></p>
+      </div>
+    </div>
+
+    <p class="text-[11px] text-ink-500 text-center mt-5">Your data stays on this device — stored locally in this browser only.</p>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="appShell" class="hidden">
+
+<!-- ============ HEADER ============ -->
+<header class="sticky top-0 z-30 backdrop-blur-md bg-ink-950/80 border-b border-ink-800/70">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-volt-300 via-volt-400 to-volt-600 ring-1 ring-inset ring-white/25 flex items-center justify-center shadow-voltGlow">
+        <svg viewBox="0 0 24 24" class="w-4.5 h-4.5" width="18" height="18" fill="none" stroke="#0A0C0B" stroke-width="2.3" stroke-linecap="round"><path d="M4 9v6M2 12h2M9 10v4M9 12h6M15 10v4M20 9v6M22 12h-2"/></svg>
+      </div>
+      <span class="font-display font-bold text-lg tracking-tight"><span class="text-ink-50">FIT</span> <span class="text-volt-400">NOVA</span></span>
+    </div>
+
+    <nav class="hidden md:flex items-center gap-1 bg-ink-900/70 border border-ink-800 rounded-full p-1" id="navDesktop">
+      <button class="nav-pill nav-btn px-4 py-1.5 rounded-full text-sm font-medium" data-view="dashboard">Dashboard</button>
+      <button class="nav-pill nav-btn px-4 py-1.5 rounded-full text-sm font-medium" data-view="workouts">Workouts</button>
+      <button class="nav-pill nav-btn px-4 py-1.5 rounded-full text-sm font-medium" data-view="progress">Progress</button>
+      <button class="nav-pill nav-btn px-4 py-1.5 rounded-full text-sm font-medium" data-view="meals">Meals</button>
+    </nav>
+
+    <button id="settingsBtn" class="icon-btn w-9 h-9 rounded-full flex items-center justify-center text-ink-300 hover:text-ink-50" aria-label="Settings">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.4M12 18.1v2.4M20.5 12h-2.4M5.9 12H3.5M17.7 6.3l-1.7 1.7M8 16l-1.7 1.7M17.7 17.7 16 16M8 8 6.3 6.3"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ============ MAIN ============ -->
+<main class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-6 view-scroll">
+
+  <!-- DASHBOARD -->
+  <section id="dashboard-view" class="view">
+    <div class="mb-6 animate-slideUp">
+      <h1 class="font-display text-3xl font-bold tracking-tight" id="greeting">Welcome back</h1>
+      <p class="text-ink-400 text-sm mt-1" id="todayLabel"></p>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" id="statCards"></div>
+
+    <div class="grid lg:grid-cols-2 gap-4 sm:gap-6 mt-6">
+      <div class="card rounded-2xl p-5 shadow-card animate-slideUp">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-display font-semibold text-base">Weight trend</h2>
+          <button class="btn btn-ghost text-xs font-medium px-3 py-1.5 rounded-full" data-open-modal="bodyLogModal">+ Log weight</button>
+        </div>
+        <div id="dashChart"></div>
+      </div>
+
+      <div class="card rounded-2xl p-5 shadow-card animate-slideUp">
+        <h2 class="font-display font-semibold text-base mb-4">Recent activity</h2>
+        <div id="activityFeed" class="space-y-3"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WORKOUTS -->
+  <section id="workouts-view" class="view hidden">
+    <div class="flex items-center justify-between mb-6 animate-slideUp">
+      <div>
+        <h1 class="font-display text-3xl font-bold tracking-tight">Workouts</h1>
+        <p class="text-ink-400 text-sm mt-1">Every session, logged.</p>
+      </div>
+      <button class="btn btn-primary font-semibold text-sm px-4 py-2.5 rounded-xl flex items-center gap-1.5" data-open-modal="workoutModal">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="hidden sm:inline">Log Workout</span>
+      </button>
+    </div>
+    <div id="workoutsList" class="space-y-3"></div>
+  </section>
+
+  <!-- PROGRESS -->
+  <section id="progress-view" class="view hidden">
+    <div class="flex items-center justify-between mb-6 animate-slideUp">
+      <div>
+        <h1 class="font-display text-3xl font-bold tracking-tight">Progress</h1>
+        <p class="text-ink-400 text-sm mt-1">Track the trend, not the noise.</p>
+      </div>
+      <button class="btn btn-primary font-semibold text-sm px-4 py-2.5 rounded-xl flex items-center gap-1.5" data-open-modal="bodyLogModal">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="hidden sm:inline">Log Entry</span>
+      </button>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-4 sm:gap-6">
+      <div class="card rounded-2xl p-5 shadow-card lg:col-span-2 animate-slideUp">
+        <h2 class="font-display font-semibold text-base mb-4">Weight over time</h2>
+        <div id="progressChart"></div>
+      </div>
+      <div class="card rounded-2xl p-5 shadow-card animate-slideUp" id="goalCard"></div>
+    </div>
+
+    <div class="card rounded-2xl p-5 shadow-card mt-6 animate-slideUp">
+      <h2 class="font-display font-semibold text-base mb-4">Entries</h2>
+      <div id="bodyLogList" class="space-y-2"></div>
+    </div>
+  </section>
+
+  <!-- MEALS -->
+  <section id="meals-view" class="view hidden">
+    <div class="flex items-center justify-between mb-6 animate-slideUp">
+      <div>
+        <h1 class="font-display text-3xl font-bold tracking-tight">Meals</h1>
+        <p class="text-ink-400 text-sm mt-1">Fuel, tracked simply.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="btn btn-scan relative font-semibold text-sm px-3.5 py-2.5 rounded-xl flex items-center gap-1.5" data-open-modal="scanModal">
+          <span class="pulse-dot absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-volt-400 ring-2 ring-ink-950"></span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7V5a1 1 0 0 1 1-1h2"/><path d="M17 4h2a1 1 0 0 1 1 1v2"/><path d="M20 17v2a1 1 0 0 1-1 1h-2"/><path d="M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M7 8v8M10.5 8v8M13 8v8M16 8v8"/></svg>
+          <span class="hidden sm:inline">Add Food</span>
+        </button>
+        <button class="btn btn-primary font-semibold text-sm px-4 py-2.5 rounded-xl flex items-center gap-1.5" data-open-modal="mealModal">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span class="hidden sm:inline">Log Meal</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card rounded-2xl p-5 shadow-card animate-slideUp" id="macroSummary"></div>
+
+    <div class="mt-6 space-y-6" id="mealsByDay"></div>
+  </section>
+
+</main>
+
+<!-- ============ MOBILE BOTTOM NAV ============ -->
+<nav class="md:hidden fixed bottom-0 inset-x-0 z-30 bg-ink-900/95 backdrop-blur-md border-t border-ink-800 flex justify-around py-2">
+  <button class="nav-btn-mobile nav-btn flex flex-col items-center gap-1 px-3 py-1 rounded-lg text-ink-400" data-view="dashboard">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>
+    <span class="text-[10px] font-medium">Home</span>
+  </button>
+  <button class="nav-btn-mobile nav-btn flex flex-col items-center gap-1 px-3 py-1 rounded-lg text-ink-400" data-view="workouts">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 9v6M2 12h2M9 10v4M9 12h6M15 10v4M20 9v6M22 12h-2"/></svg>
+    <span class="text-[10px] font-medium">Workouts</span>
+  </button>
+  <button class="nav-btn-mobile nav-btn flex flex-col items-center gap-1 px-3 py-1 rounded-lg text-ink-400" data-view="progress">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M15 7h6v6"/></svg>
+    <span class="text-[10px] font-medium">Progress</span>
+  </button>
+  <button class="nav-btn-mobile nav-btn flex flex-col items-center gap-1 px-3 py-1 rounded-lg text-ink-400" data-view="meals">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 2v8a2 2 0 1 0 4 0V2"/><path d="M8 10v12"/><path d="M17 2v7a2 2 0 0 1-2 2"/><path d="M17 2v20"/></svg>
+    <span class="text-[10px] font-medium">Meals</span>
+  </button>
+</nav>
+
+</div>
+<!-- /appShell -->
+
+<!-- ============ MODALS ============ -->
+<div id="modalRoot"></div>
+<div id="toastRoot" class="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-50 flex flex-col gap-2 items-end"></div>
+
+<template id="tpl-workoutModal">
+  <div class="modal-backdrop fixed inset-0 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn" data-modal-backdrop="workoutModal">
+    <div class="bg-ink-900 border border-ink-800 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto shadow-float animate-scaleIn" data-modal-panel>
+      <div class="sticky top-0 bg-ink-900/95 backdrop-blur border-b border-ink-800 flex items-center justify-between px-5 py-4">
+        <h3 class="font-display font-semibold text-lg">Log Workout</h3>
+        <button class="icon-btn w-8 h-8 rounded-full flex items-center justify-center text-ink-300" data-close-modal>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="workoutForm" class="p-5 space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="field-label">Workout name</label>
+            <input required name="name" class="field" placeholder="Push Day" />
+          </div>
+          <div>
+            <label class="field-label">Date</label>
+            <input required type="date" name="date" class="field" />
+          </div>
+        </div>
+        <div>
+          <label class="field-label">Duration (minutes)</label>
+          <input type="number" min="0" name="duration" class="field" placeholder="45" />
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="field-label mb-0">Exercises</label>
+            <button type="button" id="addExerciseBtn" class="text-xs font-medium text-volt-400 hover:text-volt-300">+ Add exercise</button>
+          </div>
+          <div id="exerciseList" class="space-y-3"></div>
+        </div>
+        <div>
+          <label class="field-label">Notes</label>
+          <textarea name="notes" rows="2" class="field resize-none" placeholder="Felt strong today..."></textarea>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="button" class="btn btn-ghost flex-1 py-2.5 rounded-xl text-sm font-medium" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary flex-1 py-2.5 rounded-xl text-sm font-semibold">Save Workout</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-exerciseBlock">
+  <div class="exercise-block rounded-xl p-3" data-exercise-block>
+    <div class="flex items-center gap-2 mb-2">
+      <input required class="field flex-1" data-ex-name placeholder="Bench Press" />
+      <button type="button" class="icon-btn w-8 h-8 rounded-lg flex items-center justify-center text-ember-400 shrink-0" data-remove-exercise>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-[11px] text-ink-400 font-medium px-0.5 mb-1">
+      <span>SET</span><span>WEIGHT</span><span>REPS</span><span></span>
+    </div>
+    <div data-sets-container class="space-y-1.5"></div>
+    <button type="button" class="text-xs font-medium text-volt-400 hover:text-volt-300 mt-2" data-add-set>+ Add set</button>
+  </div>
+</template>
+
+<template id="tpl-setRow">
+  <div class="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center" data-set-row>
+    <span class="text-xs text-ink-400 pl-1" data-set-index>1</span>
+    <input type="number" min="0" step="0.5" class="field !py-1.5 !text-xs" data-set-weight placeholder="lb" />
+    <input type="number" min="0" class="field !py-1.5 !text-xs" data-set-reps placeholder="reps" />
+    <button type="button" class="icon-btn w-6 h-6 rounded-md flex items-center justify-center text-ink-500" data-remove-set>
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+</template>
+
+<template id="tpl-bodyLogModal">
+  <div class="modal-backdrop fixed inset-0 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn" data-modal-backdrop="bodyLogModal">
+    <div class="bg-ink-900 border border-ink-800 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm shadow-float animate-scaleIn" data-modal-panel>
+      <div class="flex items-center justify-between px-5 py-4 border-b border-ink-800">
+        <h3 class="font-display font-semibold text-lg">Log Weight</h3>
+        <button class="icon-btn w-8 h-8 rounded-full flex items-center justify-center text-ink-300" data-close-modal>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="bodyLogForm" class="p-5 space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="field-label">Date</label>
+            <input required type="date" name="date" class="field" />
+          </div>
+          <div>
+            <label class="field-label">Weight (<span data-unit-label>lb</span>)</label>
+            <input required type="number" step="0.1" min="0" name="weight" class="field" placeholder="178.5" />
+          </div>
+        </div>
+        <div>
+          <label class="field-label">Body fat % <span class="normal-case text-ink-500">(optional)</span></label>
+          <input type="number" step="0.1" min="0" max="80" name="bodyFat" class="field" placeholder="18.2" />
+        </div>
+        <div>
+          <label class="field-label">Notes <span class="normal-case text-ink-500">(optional)</span></label>
+          <input name="notes" class="field" placeholder="Morning, fasted" />
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="button" class="btn btn-ghost flex-1 py-2.5 rounded-xl text-sm font-medium" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary flex-1 py-2.5 rounded-xl text-sm font-semibold">Save Entry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-mealModal">
+  <div class="modal-backdrop fixed inset-0 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn" data-modal-backdrop="mealModal">
+    <div class="bg-ink-900 border border-ink-800 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm max-h-[90vh] overflow-y-auto shadow-float animate-scaleIn" data-modal-panel>
+      <div class="sticky top-0 bg-ink-900/95 backdrop-blur flex items-center justify-between px-5 py-4 border-b border-ink-800">
+        <h3 class="font-display font-semibold text-lg">Log Meal</h3>
+        <button class="icon-btn w-8 h-8 rounded-full flex items-center justify-center text-ink-300" data-close-modal>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="mealForm" class="p-5 space-y-4">
+        <div>
+          <label class="field-label">Meal</label>
+          <input required name="name" class="field" placeholder="Grilled chicken bowl" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="field-label">Date</label>
+            <input required type="date" name="date" class="field" />
+          </div>
+          <div>
+            <label class="field-label">Time</label>
+            <input required type="time" name="time" class="field" />
+          </div>
+        </div>
+        <div>
+          <label class="field-label">Calories</label>
+          <input required type="number" min="0" name="calories" class="field" placeholder="620" />
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="field-label">Protein (g)</label>
+            <input type="number" min="0" name="protein" class="field" placeholder="45" />
+          </div>
+          <div>
+            <label class="field-label">Carbs (g)</label>
+            <input type="number" min="0" name="carbs" class="field" placeholder="55" />
+          </div>
+          <div>
+            <label class="field-label">Fat (g)</label>
+            <input type="number" min="0" name="fat" class="field" placeholder="18" />
+          </div>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="button" class="btn btn-ghost flex-1 py-2.5 rounded-xl text-sm font-medium" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary flex-1 py-2.5 rounded-xl text-sm font-semibold">Save Meal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-scanModal">
+  <div class="modal-backdrop fixed inset-0 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn" data-modal-backdrop="scanModal">
+    <div class="bg-ink-900 border border-ink-800 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto shadow-float animate-scaleIn" data-modal-panel>
+      <div class="sticky top-0 bg-ink-900/95 backdrop-blur flex items-center justify-between px-5 py-4 border-b border-ink-800 z-10">
+        <h3 class="font-display font-semibold text-lg">Add Food</h3>
+        <button class="icon-btn w-8 h-8 rounded-full flex items-center justify-center text-ink-300" data-close-modal>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-5 space-y-4">
+        <div class="flex items-center gap-1 bg-ink-800/60 border border-ink-800 rounded-full p-1 w-fit">
+          <button type="button" class="scan-tab-btn nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold text-ink-300" data-scan-tab="search">Search</button>
+          <button type="button" class="scan-tab-btn nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold text-ink-300" data-scan-tab="barcode">Barcode</button>
+          <button type="button" class="scan-tab-btn nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold text-ink-300" data-scan-tab="describe">Describe</button>
+        </div>
+
+        <div data-scan-panel="search" class="space-y-3">
+          <form id="scanSearchForm" class="flex gap-2">
+            <input name="q" class="field" placeholder="Try “greek yogurt” or “chicken breast”" autocomplete="off" />
+            <button type="submit" class="btn btn-primary px-4 rounded-xl text-sm font-semibold shrink-0">Go</button>
+          </form>
+          <div id="scanResults" class="space-y-1 max-h-64 overflow-y-auto"></div>
+        </div>
+
+        <div data-scan-panel="barcode" class="space-y-3 hidden">
+          <form id="scanBarcodeForm" class="flex gap-2">
+            <input name="barcode" inputmode="numeric" class="field" placeholder="e.g. 0737628064502" autocomplete="off" />
+            <button type="submit" class="btn btn-primary px-4 rounded-xl text-sm font-semibold shrink-0">Go</button>
+          </form>
+          <button type="button" id="scanCameraBtn" class="btn btn-ghost w-full py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="13" height="10" rx="2"/><path d="M16 10.5 21 8v8l-5-2.5"/></svg>
+            Scan with camera
+          </button>
+          <video id="scanVideo" class="hidden w-full rounded-xl bg-black aspect-video object-cover" muted playsinline></video>
+          <p id="scanCameraNote" class="hidden text-[11px] text-ink-500">Camera scanning isn't supported in this browser — enter the barcode manually.</p>
+          <div id="scanBarcodeResult"></div>
+        </div>
+
+        <div data-scan-panel="describe" class="space-y-3 hidden">
+          <form id="scanDescribeForm" class="space-y-2">
+            <label class="field-label">What did you eat?</label>
+            <textarea name="text" rows="3" class="field resize-none" placeholder="e.g. 2 eggs, a slice of toast, and a banana"></textarea>
+            <button type="submit" class="btn btn-primary w-full py-2.5 rounded-xl text-sm font-semibold">Estimate</button>
+          </form>
+          <div id="describeResult" class="hidden space-y-3"></div>
+        </div>
+
+        <p data-scan-disclaimer="search barcode" class="text-[11px] text-ink-500">Nutrition data from <span class="text-ink-400">Open Food Facts</span>, an open community database — coverage varies by product.</p>
+        <p data-scan-disclaimer="describe" class="hidden text-[11px] text-ink-500">Estimates come from a small built-in food list and typical portion sizes — a rough guide, not precise nutrition data.</p>
+
+        <div id="scanStatus" class="hidden text-center py-4 text-sm text-ink-400"></div>
+
+        <div id="scanPortion" class="hidden border-t border-ink-800 pt-4 space-y-3">
+          <p class="text-sm font-semibold" id="scanPortionName"></p>
+          <div id="scanHealthBadge" class="flex items-center justify-between p-3 rounded-xl"></div>
+          <div>
+            <label class="field-label">Amount (grams)</label>
+            <input type="number" min="1" name="grams" class="field" value="100" />
+          </div>
+          <div class="grid grid-cols-4 gap-2 text-center">
+            <div class="bg-ink-800/60 rounded-lg py-2">
+              <p class="font-display font-bold text-sm" id="scanPreviewCals">0</p>
+              <p class="text-[10px] text-ink-500 uppercase">kcal</p>
+            </div>
+            <div class="bg-ink-800/60 rounded-lg py-2">
+              <p class="font-display font-bold text-sm" id="scanPreviewP">0g</p>
+              <p class="text-[10px] text-ink-500 uppercase">protein</p>
+            </div>
+            <div class="bg-ink-800/60 rounded-lg py-2">
+              <p class="font-display font-bold text-sm" id="scanPreviewC">0g</p>
+              <p class="text-[10px] text-ink-500 uppercase">carbs</p>
+            </div>
+            <div class="bg-ink-800/60 rounded-lg py-2">
+              <p class="font-display font-bold text-sm" id="scanPreviewF">0g</p>
+              <p class="text-[10px] text-ink-500 uppercase">fat</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="bg-ink-800/40 rounded-lg py-1.5">
+              <p class="font-display font-semibold text-xs" id="scanPreviewFiber">0g</p>
+              <p class="text-[9px] text-ink-500 uppercase">fiber</p>
+            </div>
+            <div class="bg-ink-800/40 rounded-lg py-1.5">
+              <p class="font-display font-semibold text-xs" id="scanPreviewSugar">0g</p>
+              <p class="text-[9px] text-ink-500 uppercase">sugar</p>
+            </div>
+            <div class="bg-ink-800/40 rounded-lg py-1.5">
+              <p class="font-display font-semibold text-xs" id="scanPreviewSodium">0mg</p>
+              <p class="text-[9px] text-ink-500 uppercase">sodium</p>
+            </div>
+          </div>
+          <button type="button" id="scanAddBtn" class="btn btn-primary w-full py-2.5 rounded-xl text-sm font-semibold">Add to Meal</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-settingsModal">
+  <div class="modal-backdrop fixed inset-0 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn" data-modal-backdrop="settingsModal">
+    <div class="bg-ink-900 border border-ink-800 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm max-h-[90vh] overflow-y-auto shadow-float animate-scaleIn" data-modal-panel>
+      <div class="sticky top-0 bg-ink-900/95 backdrop-blur flex items-center justify-between px-5 py-4 border-b border-ink-800">
+        <h3 class="font-display font-semibold text-lg">Settings</h3>
+        <button class="icon-btn w-8 h-8 rounded-full flex items-center justify-center text-ink-300" data-close-modal>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="px-5 pt-4 -mb-1 flex items-center justify-between">
+        <p class="text-xs text-ink-500">Signed in as <span class="text-ink-300 font-medium" id="settingsAccountEmail"></span></p>
+        <button type="button" id="logoutBtn" class="text-xs font-medium text-ink-400 hover:text-ink-100">Log out</button>
+      </div>
+      <form id="settingsForm" class="p-5 space-y-4">
+        <div>
+          <label class="field-label">Your name</label>
+          <input name="name" class="field" placeholder="Alex" />
+        </div>
+        <div>
+          <label class="field-label">Weight unit</label>
+          <select name="weightUnit" class="field">
+            <option value="lb">lb</option>
+            <option value="kg">kg</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Goal weight <span class="normal-case text-ink-500">(optional)</span></label>
+          <input type="number" step="0.1" min="0" name="weightGoal" class="field" placeholder="170" />
+        </div>
+        <div class="h-px bg-ink-800 my-1"></div>
+        <p class="field-label !mb-2">Daily nutrition goals</p>
+        <div>
+          <label class="field-label">Calories</label>
+          <input type="number" min="0" name="calories" class="field" placeholder="2200" />
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="field-label">Protein (g)</label>
+            <input type="number" min="0" name="protein" class="field" placeholder="150" />
+          </div>
+          <div>
+            <label class="field-label">Carbs (g)</label>
+            <input type="number" min="0" name="carbs" class="field" placeholder="220" />
+          </div>
+          <div>
+            <label class="field-label">Fat (g)</label>
+            <input type="number" min="0" name="fat" class="field" placeholder="70" />
+          </div>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="button" class="btn btn-ghost flex-1 py-2.5 rounded-xl text-sm font-medium" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary flex-1 py-2.5 rounded-xl text-sm font-semibold">Save Settings</button>
+        </div>
+        <button type="button" id="clearDataBtn" class="btn btn-danger w-full py-2 rounded-xl text-xs font-medium mt-1">Clear all data</button>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script>
+/* ============================================================
+   DATA LAYER
+   ============================================================ */
+const STORAGE_KEY = 'fitnova_tracker_v1';
+const LEGACY_STORAGE_KEYS = ['nova_tracker_v1', 'thrive_tracker_v1', 'vantage_tracker_v1', 'ascent_tracker_v1', 'forge_tracker_v1'];
+
+function defaultData() {
+  return {
+    profile: {
+      name: '',
+      account: null,
+      weightUnit: 'lb',
+      goals: { calories: 2200, protein: 150, carbs: 220, fat: 70, weightGoal: null }
+    },
+    workouts: [],
+    bodyLogs: [],
+    meals: []
+  };
+}
+
+function loadData() {
+  try {
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      for (const legacyKey of LEGACY_STORAGE_KEYS) {
+        const legacy = localStorage.getItem(legacyKey);
+        if (legacy) {
+          raw = legacy;
+          localStorage.setItem(STORAGE_KEY, legacy);
+          localStorage.removeItem(legacyKey);
+          break;
+        }
+      }
+    }
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const d = defaultData();
+      return {
+        profile: { ...d.profile, ...(parsed.profile || {}), goals: { ...d.profile.goals, ...((parsed.profile || {}).goals || {}) } },
+        workouts: parsed.workouts || [],
+        bodyLogs: parsed.bodyLogs || [],
+        meals: parsed.meals || []
+      };
+    }
+  } catch (e) { console.warn('Failed to load saved data, starting fresh.', e); }
+  return defaultData();
+}
+
+let DATA = loadData();
+function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA)); }
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function nowTimeStr() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+function parseLocalDate(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+function formatDateShort(dateStr) {
+  return parseLocalDate(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+function formatDateLong(dateStr) {
+  return parseLocalDate(dateStr).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+}
+function formatDateFull(dateStr) {
+  return parseLocalDate(dateStr).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+}
+function formatTime12(timeStr) {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+}
+function esc(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/* ============================================================
+   AUTH — local-only account gate. There is no server: credentials
+   never leave this device. Password is never stored in the clear,
+   only a random salt + SHA-256(salt:password) via the Web Crypto API.
+   ============================================================ */
+const SESSION_KEY = 'fitnova_session_v1';
+const LEGACY_SESSION_KEYS = ['nova_session_v1', 'thrive_session_v1', 'vantage_session_v1'];
+(function migrateSession() {
+  if (!localStorage.getItem(SESSION_KEY)) {
+    for (const k of LEGACY_SESSION_KEYS) {
+      const v = localStorage.getItem(k);
+      if (v) { localStorage.setItem(SESSION_KEY, v); localStorage.removeItem(k); break; }
+    }
+  }
+})();
+
+async function sha256Hex(text) {
+  const bytes = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function randomSaltHex() {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function hashPassword(password, salt) { return sha256Hex(salt + ':' + password); }
+
+function setAuthPanel(panel) {
+  document.getElementById('signUpPanel').classList.toggle('hidden', panel !== 'signup');
+  document.getElementById('signInPanel').classList.toggle('hidden', panel !== 'signin');
+}
+function showAuthView() {
+  document.getElementById('appShell').classList.add('hidden');
+  document.getElementById('authView').classList.remove('hidden');
+}
+function showAppShell() {
+  document.getElementById('authView').classList.add('hidden');
+  document.getElementById('appShell').classList.remove('hidden');
+  renderAll();
+  showView('dashboard');
+}
+
+function initAuth() {
+  const hasAccount = !!DATA.profile.account;
+  setAuthPanel(hasAccount ? 'signin' : 'signup');
+  if (hasAccount) {
+    document.getElementById('signInSubtitle').textContent = `Sign in as ${DATA.profile.account.email}`;
+  }
+
+  document.getElementById('gotoSignIn').addEventListener('click', () => setAuthPanel('signin'));
+  document.getElementById('gotoSignUp').addEventListener('click', () => setAuthPanel('signup'));
+
+  document.getElementById('signUpForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const name = (fd.get('name') || '').trim();
+    const email = (fd.get('email') || '').trim().toLowerCase();
+    const password = fd.get('password') || '';
+    const confirmPw = fd.get('confirm') || '';
+    const errEl = document.getElementById('signUpError');
+    if (!name || !email) { errEl.textContent = 'Please fill in every field.'; errEl.classList.remove('hidden'); return; }
+    if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.classList.remove('hidden'); return; }
+    if (password !== confirmPw) { errEl.textContent = 'Passwords do not match.'; errEl.classList.remove('hidden'); return; }
+    errEl.classList.add('hidden');
+    const salt = randomSaltHex();
+    const hash = await hashPassword(password, salt);
+    DATA.profile.account = { name, email, salt, hash };
+    DATA.profile.name = DATA.profile.name || name;
+    saveData();
+    localStorage.setItem(SESSION_KEY, '1');
+    toast(`Welcome, ${name.split(' ')[0]}.`);
+    showAppShell();
+  });
+
+  document.getElementById('signInForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const email = (fd.get('email') || '').trim().toLowerCase();
+    const password = fd.get('password') || '';
+    const errEl = document.getElementById('signInError');
+    const account = DATA.profile.account;
+    if (!account || account.email !== email) { errEl.textContent = 'No local account matches that email.'; errEl.classList.remove('hidden'); return; }
+    const hash = await hashPassword(password, account.salt);
+    if (hash !== account.hash) { errEl.textContent = 'Incorrect password.'; errEl.classList.remove('hidden'); return; }
+    errEl.classList.add('hidden');
+    localStorage.setItem(SESSION_KEY, '1');
+    toast(`Welcome back, ${account.name.split(' ')[0]}.`);
+    showAppShell();
+  });
+
+  document.getElementById('resetAccountBtn').addEventListener('click', () => {
+    if (confirm('This erases your local account and ALL workouts, progress, and meals on this device — there is no password recovery, since nothing is stored anywhere but this browser. Continue?')) {
+      DATA = defaultData();
+      saveData();
+      localStorage.removeItem(SESSION_KEY);
+      document.getElementById('signUpForm').reset();
+      setAuthPanel('signup');
+      toast('Local account reset.', 'danger');
+    }
+  });
+}
+
+function logOut() {
+  localStorage.removeItem(SESSION_KEY);
+  closeModal();
+  setAuthPanel('signin');
+  showAuthView();
+  toast('Logged out.');
+}
+
+/* ============================================================
+   TOASTS
+   ============================================================ */
+function toast(message, tone = 'default') {
+  const root = document.getElementById('toastRoot');
+  const el = document.createElement('div');
+  const accent = tone === 'danger' ? 'border-ember-500/40' : 'border-volt-400/30';
+  el.className = `animate-toastIn bg-ink-900 border ${accent} shadow-float rounded-xl px-4 py-3 text-sm font-medium text-ink-50 flex items-center gap-2 max-w-xs`;
+  el.textContent = message;
+  root.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity .25s ease, transform .25s ease';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(6px)';
+    setTimeout(() => el.remove(), 260);
+  }, 2400);
+}
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+function openModal(name) {
+  const tpl = document.getElementById('tpl-' + name);
+  if (!tpl) return;
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = '';
+  root.appendChild(tpl.content.cloneNode(true));
+  const backdrop = root.querySelector('[data-modal-backdrop]');
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
+  root.querySelectorAll('[data-close-modal]').forEach(b => b.addEventListener('click', closeModal));
+  document.addEventListener('keydown', escCloseHandler);
+  initModal(name, root);
+}
+function escCloseHandler(e) { if (e.key === 'Escape') closeModal(); }
+function closeModal() {
+  stopCameraScanIfActive();
+  document.getElementById('modalRoot').innerHTML = '';
+  document.removeEventListener('keydown', escCloseHandler);
+}
+
+function initModal(name, root) {
+  if (name === 'workoutModal') return initWorkoutModal(root);
+  if (name === 'bodyLogModal') return initBodyLogModal(root);
+  if (name === 'mealModal') return initMealModal(root);
+  if (name === 'settingsModal') return initSettingsModal(root);
+  if (name === 'scanModal') return initScanModal(root);
+}
+
+/* ---- Workout modal ---- */
+function makeSetRow(container, index) {
+  const tpl = document.getElementById('tpl-setRow');
+  const node = tpl.content.cloneNode(true);
+  const row = node.querySelector('[data-set-row]');
+  row.querySelector('[data-set-index]').textContent = index;
+  row.querySelector('[data-remove-set]').addEventListener('click', () => {
+    if (container.querySelectorAll('[data-set-row]').length <= 1) return;
+    row.remove();
+    renumberSets(container);
+  });
+  container.appendChild(row);
+}
+function renumberSets(container) {
+  container.querySelectorAll('[data-set-row]').forEach((row, i) => {
+    row.querySelector('[data-set-index]').textContent = i + 1;
+  });
+}
+function makeExerciseBlock(list) {
+  const tpl = document.getElementById('tpl-exerciseBlock');
+  const node = tpl.content.cloneNode(true);
+  const block = node.querySelector('[data-exercise-block]');
+  const setsContainer = block.querySelector('[data-sets-container]');
+  makeSetRow(setsContainer, 1);
+  block.querySelector('[data-add-set]').addEventListener('click', () => {
+    makeSetRow(setsContainer, setsContainer.children.length + 1);
+  });
+  block.querySelector('[data-remove-exercise]').addEventListener('click', () => {
+    if (list.querySelectorAll('[data-exercise-block]').length <= 1) { toast('A workout needs at least one exercise.'); return; }
+    block.remove();
+  });
+  list.appendChild(block);
+}
+function initWorkoutModal(root) {
+  const list = root.querySelector('#exerciseList');
+  makeExerciseBlock(list);
+  root.querySelector('#addExerciseBtn').addEventListener('click', () => makeExerciseBlock(list));
+  root.querySelector('input[name="date"]').value = todayStr();
+
+  root.querySelector('#workoutForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const exercises = [];
+    list.querySelectorAll('[data-exercise-block]').forEach(block => {
+      const name = block.querySelector('[data-ex-name]').value.trim();
+      if (!name) return;
+      const sets = [];
+      block.querySelectorAll('[data-set-row]').forEach(row => {
+        const weight = parseFloat(row.querySelector('[data-set-weight]').value) || 0;
+        const reps = parseInt(row.querySelector('[data-set-reps]').value) || 0;
+        if (weight || reps) sets.push({ weight, reps });
+      });
+      if (sets.length) exercises.push({ name, sets });
+    });
+    if (!exercises.length) { toast('Add at least one exercise with a set.', 'danger'); return; }
+    DATA.workouts.push({
+      id: uid(),
+      name: fd.get('name').trim(),
+      date: fd.get('date'),
+      duration: parseInt(fd.get('duration')) || 0,
+      notes: (fd.get('notes') || '').trim(),
+      exercises
+    });
+    saveData();
+    closeModal();
+    toast('Workout logged.');
+    renderAll();
+  });
+}
+
+/* ---- Body log modal ---- */
+function initBodyLogModal(root) {
+  root.querySelector('input[name="date"]').value = todayStr();
+  root.querySelector('[data-unit-label]').textContent = DATA.profile.weightUnit;
+  root.querySelector('#bodyLogForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    DATA.bodyLogs.push({
+      id: uid(),
+      date: fd.get('date'),
+      weight: parseFloat(fd.get('weight')),
+      bodyFat: fd.get('bodyFat') ? parseFloat(fd.get('bodyFat')) : null,
+      notes: (fd.get('notes') || '').trim()
+    });
+    saveData();
+    closeModal();
+    toast('Weight logged.');
+    renderAll();
+  });
+}
+
+/* ---- Meal modal ---- */
+function initMealModal(root) {
+  root.querySelector('input[name="date"]').value = todayStr();
+  root.querySelector('input[name="time"]').value = nowTimeStr();
+  if (pendingMealPrefill) {
+    const f = root.querySelector('#mealForm');
+    f.name.value = pendingMealPrefill.name;
+    f.calories.value = pendingMealPrefill.calories;
+    f.protein.value = pendingMealPrefill.protein;
+    f.carbs.value = pendingMealPrefill.carbs;
+    f.fat.value = pendingMealPrefill.fat;
+    pendingMealPrefill = null;
+  }
+  root.querySelector('#mealForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    DATA.meals.push({
+      id: uid(),
+      name: fd.get('name').trim(),
+      date: fd.get('date'),
+      time: fd.get('time'),
+      calories: parseFloat(fd.get('calories')) || 0,
+      protein: parseFloat(fd.get('protein')) || 0,
+      carbs: parseFloat(fd.get('carbs')) || 0,
+      fat: parseFloat(fd.get('fat')) || 0
+    });
+    saveData();
+    closeModal();
+    toast('Meal logged.');
+    renderAll();
+  });
+}
+
+/* ---- Settings modal ---- */
+function initSettingsModal(root) {
+  root.querySelector('#settingsAccountEmail').textContent = DATA.profile.account ? DATA.profile.account.email : '—';
+  root.querySelector('#logoutBtn').addEventListener('click', logOut);
+
+  const f = root.querySelector('#settingsForm');
+  f.name.value = DATA.profile.name || '';
+  f.weightUnit.value = DATA.profile.weightUnit || 'lb';
+  f.weightGoal.value = DATA.profile.goals.weightGoal ?? '';
+  f.calories.value = DATA.profile.goals.calories ?? '';
+  f.protein.value = DATA.profile.goals.protein ?? '';
+  f.carbs.value = DATA.profile.goals.carbs ?? '';
+  f.fat.value = DATA.profile.goals.fat ?? '';
+
+  f.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const fd = new FormData(f);
+    DATA.profile.name = (fd.get('name') || '').trim();
+    DATA.profile.weightUnit = fd.get('weightUnit');
+    DATA.profile.goals = {
+      calories: parseFloat(fd.get('calories')) || 0,
+      protein: parseFloat(fd.get('protein')) || 0,
+      carbs: parseFloat(fd.get('carbs')) || 0,
+      fat: parseFloat(fd.get('fat')) || 0,
+      weightGoal: fd.get('weightGoal') ? parseFloat(fd.get('weightGoal')) : null
+    };
+    saveData();
+    closeModal();
+    toast('Settings saved.');
+    renderAll();
+  });
+
+  root.querySelector('#clearDataBtn').addEventListener('click', () => {
+    if (confirm('This will permanently delete your local account, all workouts, progress entries, and meals on this device, and sign you out. Continue?')) {
+      DATA = defaultData();
+      saveData();
+      localStorage.removeItem(SESSION_KEY);
+      closeModal();
+      toast('All data cleared.', 'danger');
+      setAuthPanel('signup');
+      showAuthView();
+    }
+  });
+}
+
+/* ---- Scan Food modal ---- */
+let scanSelected = null;
+let scanStream = null;
+let pendingMealPrefill = null;
+
+function initScanModal(root) {
+  scanSelected = null;
+
+  root.querySelectorAll('[data-scan-tab]').forEach(btn => {
+    btn.addEventListener('click', () => setScanTab(root, btn.dataset.scanTab));
+  });
+  setScanTab(root, 'search');
+
+  root.querySelector('#scanSearchForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const q = (new FormData(e.target).get('q') || '').trim();
+    if (q) runScanSearch(root, q);
+  });
+
+  root.querySelector('#scanBarcodeForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const code = (new FormData(e.target).get('barcode') || '').trim();
+    if (code) runBarcodeLookup(root, code);
+  });
+
+  root.querySelector('#scanDescribeForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = (new FormData(e.target).get('text') || '').trim();
+    if (text) renderDescribeResult(root, text, estimateMealFromText(text));
+  });
+
+  const cameraBtn = root.querySelector('#scanCameraBtn');
+  if (!('BarcodeDetector' in window)) {
+    cameraBtn.classList.add('hidden');
+    root.querySelector('#scanCameraNote').classList.remove('hidden');
+  } else {
+    cameraBtn.addEventListener('click', () => startCameraScan(root));
+  }
+
+  root.querySelector('input[name="grams"]').addEventListener('input', () => updatePortionPreview(root));
+  root.querySelector('#scanAddBtn').addEventListener('click', () => confirmScanSelection());
+}
+
+function setScanTab(root, tab) {
+  root.querySelectorAll('[data-scan-tab]').forEach(btn => {
+    const active = btn.dataset.scanTab === tab;
+    btn.classList.toggle('bg-volt-400', active);
+    btn.classList.toggle('text-ink-950', active);
+    btn.classList.toggle('text-ink-300', !active);
+  });
+  root.querySelectorAll('[data-scan-panel]').forEach(panel => {
+    panel.classList.toggle('hidden', panel.dataset.scanPanel !== tab);
+  });
+  root.querySelectorAll('[data-scan-disclaimer]').forEach(p => {
+    p.classList.toggle('hidden', !p.dataset.scanDisclaimer.split(' ').includes(tab));
+  });
+  root.querySelector('#scanPortion').classList.add('hidden');
+  root.querySelector('#describeResult').classList.add('hidden');
+  setScanStatus(root, '');
+  scanSelected = null;
+  if (tab !== 'barcode') stopCameraScanIfActive();
+}
+
+function setScanStatus(root, text) {
+  const el = root.querySelector('#scanStatus');
+  if (!text) { el.classList.add('hidden'); el.textContent = ''; return; }
+  el.classList.remove('hidden');
+  el.textContent = text;
+}
+
+async function runScanSearch(root, query) {
+  setScanStatus(root, 'Searching…');
+  root.querySelector('#scanResults').innerHTML = '';
+  root.querySelector('#scanPortion').classList.add('hidden');
+  try {
+    const products = await offSearch(query);
+    setScanStatus(root, '');
+    renderScanResults(root, products);
+  } catch (err) {
+    setScanStatus(root, 'Search failed — check your connection and try again.');
+  }
+}
+
+async function runBarcodeLookup(root, code) {
+  setScanStatus(root, 'Looking up…');
+  root.querySelector('#scanBarcodeResult').innerHTML = '';
+  root.querySelector('#scanPortion').classList.add('hidden');
+  try {
+    const product = await offBarcode(code);
+    setScanStatus(root, '');
+    root.querySelector('#scanBarcodeResult').innerHTML = `<p class="text-xs text-ink-400">Found: <span class="text-ink-100 font-medium">${esc(product.name)}</span></p>`;
+    selectProduct(root, product);
+  } catch (err) {
+    setScanStatus(root, 'No product found for that barcode.');
+  }
+}
+
+async function offSearch(query) {
+  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=12`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('search failed');
+  const data = await res.json();
+  return (data.products || [])
+    .map(normalizeOFFProduct)
+    .filter(p => p && p.per100.calories > 0)
+    .slice(0, 12);
+}
+
+async function offBarcode(code) {
+  const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('lookup failed');
+  const data = await res.json();
+  if (data.status !== 1 || !data.product) throw new Error('not found');
+  const product = normalizeOFFProduct(data.product);
+  if (!product) throw new Error('no nutrition data');
+  return product;
+}
+
+function normalizeOFFProduct(p) {
+  if (!p) return null;
+  const name = p.product_name || p.product_name_en || p.generic_name;
+  if (!name) return null;
+  const n = p.nutriments || {};
+  const calories = n['energy-kcal_100g'] ?? (n['energy_100g'] ? n['energy_100g'] / 4.184 : 0);
+  const sodiumG = n['sodium_100g'] ?? (n['salt_100g'] ? n['salt_100g'] / 2.5 : 0);
+  return {
+    name,
+    brand: p.brands || '',
+    nutriScoreGrade: (p.nutriscore_grade || (p.nutrition_grades || '')).toLowerCase() || null,
+    per100: {
+      calories: Number(calories) || 0,
+      protein: Number(n['proteins_100g']) || 0,
+      carbs: Number(n['carbohydrates_100g']) || 0,
+      fat: Number(n['fat_100g']) || 0,
+      fiber: Number(n['fiber_100g']) || 0,
+      sugar: Number(n['sugars_100g']) || 0,
+      sodium: (Number(sodiumG) || 0) * 1000
+    }
+  };
+}
+
+function renderScanResults(root, products) {
+  const container = root.querySelector('#scanResults');
+  if (!products.length) { container.innerHTML = `<p class="text-sm text-ink-500 text-center py-6">No results. Try a different search.</p>`; return; }
+  container.innerHTML = products.map((p, i) => `
+    <button type="button" class="w-full text-left flex items-center justify-between gap-3 p-2.5 rounded-xl hover:bg-ink-800/60 transition-colors" data-select-product="${i}">
+      <div class="min-w-0">
+        <p class="text-sm font-medium truncate">${esc(p.name)}</p>
+        <p class="text-xs text-ink-500 truncate">${p.brand ? esc(p.brand) + ' · ' : ''}${Math.round(p.per100.calories)} kcal / 100g</p>
+      </div>
+      <span class="text-ink-500 shrink-0 -rotate-90">${ICONS.chevron}</span>
+    </button>`).join('');
+  container.querySelectorAll('[data-select-product]').forEach(btn => {
+    btn.addEventListener('click', () => selectProduct(root, products[+btn.dataset.selectProduct]));
+  });
+}
+
+function selectProduct(root, product) {
+  scanSelected = product;
+  root.querySelector('#scanPortion').classList.remove('hidden');
+  root.querySelector('#scanPortionName').textContent = product.name;
+  root.querySelector('input[name="grams"]').value = 100;
+  updatePortionPreview(root);
+  root.querySelector('#scanPortion').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function updatePortionPreview(root) {
+  if (!scanSelected) return;
+  const grams = parseFloat(root.querySelector('input[name="grams"]').value) || 0;
+  const factor = grams / 100;
+  const p = scanSelected.per100;
+  root.querySelector('#scanPreviewCals').textContent = Math.round(p.calories * factor);
+  root.querySelector('#scanPreviewP').textContent = Math.round(p.protein * factor) + 'g';
+  root.querySelector('#scanPreviewC').textContent = Math.round(p.carbs * factor) + 'g';
+  root.querySelector('#scanPreviewF').textContent = Math.round(p.fat * factor) + 'g';
+  root.querySelector('#scanPreviewFiber').textContent = Math.round(p.fiber * factor) + 'g';
+  root.querySelector('#scanPreviewSugar').textContent = Math.round(p.sugar * factor) + 'g';
+  root.querySelector('#scanPreviewSodium').textContent = Math.round(p.sodium * factor) + 'mg';
+
+  const tier = scanSelected.nutriScoreGrade ? nutriScoreInfo(scanSelected.nutriScoreGrade) : null;
+  const finalTier = tier || heuristicHealthTier(p);
+  const badge = root.querySelector('#scanHealthBadge');
+  badge.className = `flex items-center justify-between p-3 rounded-xl ${finalTier.bg}`;
+  badge.innerHTML = `
+    <div>
+      <p class="text-sm font-semibold ${finalTier.text}">${finalTier.label}</p>
+      <p class="text-xs text-ink-400 mt-0.5">${finalTier.tip}</p>
+    </div>`;
+}
+
+function confirmScanSelection() {
+  if (!scanSelected) return;
+  const root = document.getElementById('modalRoot');
+  const grams = parseFloat(root.querySelector('input[name="grams"]').value) || 100;
+  const factor = grams / 100;
+  const p = scanSelected.per100;
+  pendingMealPrefill = {
+    name: scanSelected.name,
+    calories: Math.round(p.calories * factor),
+    protein: Math.round(p.protein * factor),
+    carbs: Math.round(p.carbs * factor),
+    fat: Math.round(p.fat * factor)
+  };
+  closeModal();
+  openModal('mealModal');
+}
+
+async function startCameraScan(root) {
+  try {
+    const detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'] });
+    const video = root.querySelector('#scanVideo');
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = scanStream;
+    video.classList.remove('hidden');
+    await video.play();
+    const tick = async () => {
+      if (!scanStream) return;
+      try {
+        const codes = await detector.detect(video);
+        if (codes.length) {
+          const code = codes[0].rawValue;
+          stopCameraScanIfActive();
+          root.querySelector('input[name="barcode"]').value = code;
+          runBarcodeLookup(root, code);
+          return;
+        }
+      } catch (err) { /* keep trying on transient detector errors */ }
+      requestAnimationFrame(tick);
+    };
+    tick();
+  } catch (err) {
+    toast('Could not access the camera. Enter the barcode manually.', 'danger');
+  }
+}
+function stopCameraScanIfActive() {
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+}
+
+/* ============================================================
+   DESCRIBE-A-MEAL ESTIMATOR
+   Small built-in food list (calories are per typical serving, not
+   per 100g) so free text like "2 eggs and a banana" reads naturally.
+   This is a rough local estimate, not a nutrition database lookup.
+   ============================================================ */
+const FOOD_DB = [
+  { names: ['egg whites', 'egg white'], label: 'egg white', cal: 17, p: 3.6, c: 0.2, f: 0.1, fiber: 0, sugar: 0, sodium: 55, cat: 'whole' },
+  { names: ['eggs', 'egg'], label: 'egg', cal: 78, p: 6.3, c: 0.6, f: 5.3, fiber: 0, sugar: 0.4, sodium: 62, cat: 'whole' },
+  { names: ['bacon'], label: 'bacon', cal: 43, p: 3, c: 0.1, f: 3.3, fiber: 0, sugar: 0, sodium: 185, cat: 'treat' },
+  { names: ['sausage', 'sausages'], label: 'sausage', cat: 'treat', cal: 85, p: 5, c: 1, f: 7, fiber: 0, sugar: 0.5, sodium: 250 },
+  { names: ['chicken breast', 'grilled chicken'], label: 'chicken breast', cal: 231, p: 43, c: 0, f: 5, fiber: 0, sugar: 0, sodium: 90, cat: 'whole' },
+  { names: ['chicken thigh'], label: 'chicken thigh', cal: 209, p: 26, c: 0, f: 11, fiber: 0, sugar: 0, sodium: 90, cat: 'moderate' },
+  { names: ['chicken'], label: 'chicken', cal: 220, p: 38, c: 0, f: 7, fiber: 0, sugar: 0, sodium: 85, cat: 'whole' },
+  { names: ['turkey breast', 'turkey'], label: 'turkey', cal: 135, p: 30, c: 0, f: 1, fiber: 0, sugar: 0, sodium: 55, cat: 'whole' },
+  { names: ['salmon'], label: 'salmon', cal: 367, p: 39, c: 0, f: 22, fiber: 0, sugar: 0, sodium: 75, cat: 'whole' },
+  { names: ['tuna'], label: 'tuna', cal: 128, p: 28, c: 0, f: 1, fiber: 0, sugar: 0, sodium: 300, cat: 'whole' },
+  { names: ['shrimp', 'prawns'], label: 'shrimp', cal: 99, p: 24, c: 0, f: 0.3, fiber: 0, sugar: 0, sodium: 190, cat: 'whole' },
+  { names: ['steak', 'beef steak'], label: 'steak', cal: 386, p: 39, c: 0, f: 25, fiber: 0, sugar: 0, sodium: 90, cat: 'moderate' },
+  { names: ['ground beef', 'beef mince'], label: 'ground beef', cal: 254, p: 17, c: 0, f: 20, fiber: 0, sugar: 0, sodium: 75, cat: 'moderate' },
+  { names: ['pork chop', 'pork'], label: 'pork', cal: 231, p: 26, c: 0, f: 14, fiber: 0, sugar: 0, sodium: 70, cat: 'moderate' },
+  { names: ['tofu'], label: 'tofu', cal: 76, p: 8, c: 2, f: 4.8, fiber: 1, sugar: 0.6, sodium: 10, cat: 'whole' },
+  { names: ['lentils'], label: 'lentils', cal: 230, p: 18, c: 40, f: 1, fiber: 16, sugar: 3.6, sodium: 4, cat: 'whole' },
+  { names: ['black beans', 'beans'], label: 'beans', cal: 227, p: 15, c: 41, f: 1, fiber: 15, sugar: 0.6, sodium: 2, cat: 'whole' },
+  { names: ['chickpeas', 'garbanzo beans'], label: 'chickpeas', cal: 269, p: 15, c: 45, f: 4, fiber: 12.5, sugar: 8, sodium: 11, cat: 'whole' },
+  { names: ['greek yogurt', 'yogurt'], label: 'yogurt', cal: 150, p: 22, c: 8, f: 4, fiber: 0, sugar: 8, sodium: 80, cat: 'whole' },
+  { names: ['cottage cheese'], label: 'cottage cheese', cal: 220, p: 25, c: 8, f: 9, fiber: 0, sugar: 8, sodium: 820, cat: 'whole' },
+  { names: ['protein shake', 'protein powder'], label: 'protein shake', cal: 150, p: 25, c: 5, f: 3, fiber: 1, sugar: 2, sodium: 130, cat: 'whole' },
+  { names: ['milk'], label: 'milk', cal: 149, p: 8, c: 12, f: 8, fiber: 0, sugar: 12, sodium: 105, cat: 'moderate' },
+  { names: ['cheese'], label: 'cheese', cal: 113, p: 7, c: 1, f: 9, fiber: 0, sugar: 0.1, sodium: 174, cat: 'moderate' },
+  { names: ['butter'], label: 'butter', cal: 102, p: 0, c: 0, f: 12, fiber: 0, sugar: 0, sodium: 91, cat: 'treat' },
+  { names: ['olive oil'], label: 'olive oil', cal: 119, p: 0, c: 0, f: 14, fiber: 0, sugar: 0, sodium: 0, cat: 'moderate' },
+  { names: ['peanut butter'], label: 'peanut butter', cal: 94, p: 4, c: 3, f: 8, fiber: 1, sugar: 1.6, sodium: 75, cat: 'moderate' },
+  { names: ['almonds'], label: 'almonds', cal: 164, p: 6, c: 6, f: 14, fiber: 3.5, sugar: 1.2, sodium: 0, cat: 'whole' },
+  { names: ['walnuts'], label: 'walnuts', cal: 185, p: 4, c: 4, f: 18, fiber: 2, sugar: 0.7, sodium: 1, cat: 'whole' },
+  { names: ['hummus'], label: 'hummus', cal: 70, p: 2, c: 6, f: 5, fiber: 2, sugar: 0.1, sodium: 130, cat: 'whole' },
+  { names: ['brown rice'], label: 'brown rice', cal: 216, p: 5, c: 45, f: 1.8, fiber: 3.5, sugar: 0.7, sodium: 10, cat: 'whole' },
+  { names: ['white rice', 'rice'], label: 'rice', cal: 205, p: 4, c: 45, f: 0.4, fiber: 0.6, sugar: 0.1, sodium: 2, cat: 'moderate' },
+  { names: ['pasta', 'spaghetti', 'noodles'], label: 'pasta', cal: 221, p: 8, c: 43, f: 1.3, fiber: 2.5, sugar: 0.8, sodium: 1, cat: 'moderate' },
+  { names: ['whole wheat bread', 'wheat bread'], label: 'whole wheat bread', cal: 81, p: 4, c: 14, f: 1, fiber: 2, sugar: 1.6, sodium: 146, cat: 'whole' },
+  { names: ['white bread', 'toast', 'bread'], label: 'bread', cal: 79, p: 2.7, c: 15, f: 1, fiber: 0.8, sugar: 1.4, sodium: 152, cat: 'moderate' },
+  { names: ['oatmeal', 'porridge', 'oats'], label: 'oatmeal', cal: 158, p: 6, c: 27, f: 3, fiber: 4, sugar: 1.1, sodium: 9, cat: 'whole' },
+  { names: ['quinoa'], label: 'quinoa', cal: 222, p: 8, c: 39, f: 4, fiber: 5, sugar: 1.6, sodium: 13, cat: 'whole' },
+  { names: ['sweet potato'], label: 'sweet potato', cal: 112, p: 2, c: 26, f: 0.1, fiber: 3.8, sugar: 5.4, sodium: 70, cat: 'whole' },
+  { names: ['potato'], label: 'potato', cal: 161, p: 4.3, c: 37, f: 0.2, fiber: 3.8, sugar: 1.4, sodium: 17, cat: 'whole' },
+  { names: ['tortilla', 'wrap'], label: 'tortilla', cal: 146, p: 4, c: 25, f: 3, fiber: 1.5, sugar: 1, sodium: 380, cat: 'moderate' },
+  { names: ['cereal'], label: 'cereal', cal: 120, p: 2, c: 26, f: 1, fiber: 1, sugar: 12, sodium: 190, cat: 'treat' },
+  { names: ['granola'], label: 'granola', cal: 200, p: 5, c: 30, f: 7, fiber: 3, sugar: 12, sodium: 20, cat: 'moderate' },
+  { names: ['bagel'], label: 'bagel', cal: 289, p: 11, c: 56, f: 1.7, fiber: 2.3, sugar: 5.5, sodium: 460, cat: 'moderate' },
+  { names: ['pancakes', 'pancake'], label: 'pancakes', cal: 172, p: 5, c: 22, f: 7, fiber: 1, sugar: 5, sodium: 430, cat: 'treat' },
+  { names: ['waffle', 'waffles'], label: 'waffle', cal: 218, p: 6, c: 25, f: 11, fiber: 1.5, sugar: 4, sodium: 400, cat: 'treat' },
+  { names: ['broccoli'], label: 'broccoli', cal: 55, p: 3.7, c: 11, f: 0.6, fiber: 5, sugar: 2.6, sodium: 33, cat: 'whole' },
+  { names: ['spinach'], label: 'spinach', cal: 7, p: 0.9, c: 1, f: 0.1, fiber: 0.7, sugar: 0.1, sodium: 24, cat: 'whole' },
+  { names: ['salad'], label: 'salad', cal: 25, p: 1.5, c: 4, f: 0.2, fiber: 2, sugar: 2, sodium: 15, cat: 'whole' },
+  { names: ['carrots', 'carrot'], label: 'carrot', cal: 25, p: 0.6, c: 6, f: 0.1, fiber: 1.7, sugar: 3, sodium: 42, cat: 'whole' },
+  { names: ['tomato', 'tomatoes'], label: 'tomato', cal: 22, p: 1, c: 5, f: 0.2, fiber: 1.5, sugar: 3.2, sodium: 6, cat: 'whole' },
+  { names: ['cucumber'], label: 'cucumber', cal: 16, p: 0.7, c: 4, f: 0.1, fiber: 0.5, sugar: 2, sodium: 2, cat: 'whole' },
+  { names: ['mixed vegetables', 'vegetables', 'veggies'], label: 'vegetables', cal: 77, p: 4, c: 15, f: 0.5, fiber: 4, sugar: 5, sodium: 40, cat: 'whole' },
+  { names: ['avocado'], label: 'avocado', cal: 120, p: 1.5, c: 6, f: 11, fiber: 5, sugar: 0.2, sodium: 5, cat: 'whole' },
+  { names: ['corn'], label: 'corn', cal: 132, p: 5, c: 29, f: 2, fiber: 3.6, sugar: 5, sodium: 15, cat: 'moderate' },
+  { names: ['green beans'], label: 'green beans', cal: 31, p: 2, c: 7, f: 0.1, fiber: 3.4, sugar: 3.3, sodium: 6, cat: 'whole' },
+  { names: ['apple'], label: 'apple', cal: 95, p: 0.5, c: 25, f: 0.3, fiber: 4.4, sugar: 19, sodium: 2, cat: 'whole' },
+  { names: ['banana'], label: 'banana', cal: 105, p: 1.3, c: 27, f: 0.4, fiber: 3.1, sugar: 14, sodium: 1, cat: 'whole' },
+  { names: ['orange'], label: 'orange', cal: 62, p: 1.2, c: 15, f: 0.2, fiber: 3.1, sugar: 12, sodium: 0, cat: 'whole' },
+  { names: ['grapes'], label: 'grapes', cal: 104, p: 1.1, c: 27, f: 0.2, fiber: 1.4, sugar: 23, sodium: 3, cat: 'whole' },
+  { names: ['strawberries'], label: 'strawberries', cal: 49, p: 1, c: 12, f: 0.5, fiber: 3, sugar: 7, sodium: 2, cat: 'whole' },
+  { names: ['blueberries'], label: 'blueberries', cal: 84, p: 1.1, c: 21, f: 0.5, fiber: 3.6, sugar: 15, sodium: 1, cat: 'whole' },
+  { names: ['mango'], label: 'mango', cal: 99, p: 1.4, c: 25, f: 0.6, fiber: 2.6, sugar: 23, sodium: 2, cat: 'whole' },
+  { names: ['watermelon'], label: 'watermelon', cal: 46, p: 0.9, c: 12, f: 0.2, fiber: 0.6, sugar: 9.4, sodium: 2, cat: 'whole' },
+  { names: ['pineapple'], label: 'pineapple', cal: 82, p: 0.9, c: 22, f: 0.2, fiber: 2.3, sugar: 16, sodium: 2, cat: 'whole' },
+  { names: ['pizza'], label: 'pizza', cal: 285, p: 12, c: 36, f: 10, fiber: 2.5, sugar: 3.8, sodium: 640, cat: 'treat' },
+  { names: ['cheeseburger'], label: 'cheeseburger', cal: 650, p: 30, c: 46, f: 38, fiber: 2, sugar: 8, sodium: 1010, cat: 'treat' },
+  { names: ['burger', 'hamburger'], label: 'burger', cal: 550, p: 25, c: 45, f: 30, fiber: 2, sugar: 6, sodium: 900, cat: 'treat' },
+  { names: ['fries', 'french fries'], label: 'fries', cal: 365, p: 4, c: 48, f: 17, fiber: 4, sugar: 0.3, sodium: 246, cat: 'treat' },
+  { names: ['soda', 'coke', 'cola', 'pop'], label: 'soda', cal: 150, p: 0, c: 39, f: 0, fiber: 0, sugar: 39, sodium: 15, cat: 'treat' },
+  { names: ['candy bar', 'candy'], label: 'candy', cal: 250, p: 3, c: 33, f: 12, fiber: 1, sugar: 30, sodium: 90, cat: 'treat' },
+  { names: ['chocolate'], label: 'chocolate', cal: 155, p: 2, c: 17, f: 9, fiber: 1.5, sugar: 15, sodium: 24, cat: 'treat' },
+  { names: ['chips'], label: 'chips', cal: 152, p: 2, c: 15, f: 10, fiber: 1.4, sugar: 0.1, sodium: 170, cat: 'treat' },
+  { names: ['cookie', 'cookies'], label: 'cookie', cal: 148, p: 1.5, c: 22, f: 6.5, fiber: 0.6, sugar: 12, sodium: 110, cat: 'treat' },
+  { names: ['donut', 'doughnut'], label: 'donut', cal: 253, p: 4, c: 31, f: 14, fiber: 0.7, sugar: 12, sodium: 260, cat: 'treat' },
+  { names: ['ice cream'], label: 'ice cream', cal: 273, p: 5, c: 32, f: 14, fiber: 0.9, sugar: 28, sodium: 105, cat: 'treat' },
+  { names: ['cake'], label: 'cake', cal: 235, p: 3, c: 35, f: 10, fiber: 0.5, sugar: 24, sodium: 215, cat: 'treat' },
+  { names: ['fried chicken'], label: 'fried chicken', cal: 320, p: 22, c: 10, f: 21, fiber: 0.4, sugar: 0, sodium: 540, cat: 'treat' },
+  { names: ['hot dog'], label: 'hot dog', cal: 290, p: 10, c: 22, f: 18, fiber: 0, sugar: 2, sodium: 670, cat: 'treat' },
+  { names: ['burrito'], label: 'burrito', cal: 450, p: 18, c: 55, f: 17, fiber: 8, sugar: 3, sodium: 1050, cat: 'moderate' },
+  { names: ['sandwich'], label: 'sandwich', cal: 350, p: 15, c: 40, f: 14, fiber: 3, sugar: 6, sodium: 900, cat: 'moderate' },
+  { names: ['sushi'], label: 'sushi', cal: 255, p: 9, c: 43, f: 5, fiber: 1.5, sugar: 6, sodium: 520, cat: 'moderate' },
+  { names: ['taco', 'tacos'], label: 'taco', cal: 210, p: 9, c: 20, f: 10, fiber: 3, sugar: 2, sodium: 480, cat: 'moderate' },
+  { names: ['stir fry'], label: 'stir fry', cal: 320, p: 20, c: 30, f: 12, fiber: 4, sugar: 6, sodium: 620, cat: 'whole' },
+  { names: ['smoothie'], label: 'smoothie', cal: 220, p: 5, c: 45, f: 2, fiber: 3, sugar: 38, sodium: 70, cat: 'moderate' },
+  { names: ['protein bar'], label: 'protein bar', cal: 200, p: 15, c: 22, f: 7, fiber: 5, sugar: 8, sodium: 200, cat: 'moderate' },
+  { names: ['granola bar'], label: 'granola bar', cal: 140, p: 3, c: 20, f: 5, fiber: 1.5, sugar: 9, sodium: 65, cat: 'moderate' },
+  { names: ['muffin'], label: 'muffin', cal: 340, p: 5, c: 47, f: 15, fiber: 1.5, sugar: 26, sodium: 300, cat: 'treat' },
+  { names: ['beer'], label: 'beer', cal: 153, p: 1.6, c: 13, f: 0, fiber: 0, sugar: 0, sodium: 14, cat: 'treat' },
+  { names: ['wine'], label: 'wine', cal: 125, p: 0.1, c: 4, f: 0, fiber: 0, sugar: 1, sodium: 6, cat: 'treat' },
+  { names: ['black coffee', 'coffee'], label: 'coffee', cal: 2, p: 0.3, c: 0, f: 0, fiber: 0, sugar: 0, sodium: 5, cat: 'whole' },
+  { names: ['latte', 'cappuccino'], label: 'latte', cal: 190, p: 10, c: 18, f: 7, fiber: 0, sugar: 16, sodium: 100, cat: 'moderate' },
+  { names: ['energy drink'], label: 'energy drink', cal: 110, p: 0, c: 28, f: 0, fiber: 0, sugar: 28, sodium: 100, cat: 'treat' },
+  { names: ['water'], label: 'water', cal: 0, p: 0, c: 0, f: 0, fiber: 0, sugar: 0, sodium: 0, cat: 'whole' }
+];
+const FOOD_DB_SORTED = [...FOOD_DB].sort((a, b) =>
+  Math.max(...b.names.map(n => n.length)) - Math.max(...a.names.map(n => n.length))
+);
+
+const DESCRIBE_QTY_WORDS = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, couple: 2, few: 3 };
+const DESCRIBE_FILLER_WORDS = new Set(['of', 'bowl', 'bowls', 'cup', 'cups', 'slice', 'slices', 'piece', 'pieces', 'serving', 'servings', 'plate', 'plates', 'glass', 'glasses', 'can', 'cans', 'bottle', 'bottles', 'some', 'the', 'with', 'a', 'an']);
+
+function matchFood(text) {
+  if (!text) return null;
+  for (const entry of FOOD_DB_SORTED) {
+    for (const name of entry.names) {
+      const re = new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+      if (re.test(text)) return entry;
+    }
+  }
+  return null;
+}
+
+function estimateMealFromText(text) {
+  const segments = text.split(/,|&|\+|\n|\b(?:and|with|plus)\b/i).map(s => s.trim()).filter(Boolean);
+  const items = [];
+  const unmatched = [];
+  segments.forEach(seg => {
+    const words = seg.toLowerCase().split(/\s+/).filter(Boolean);
+    let qty = 1, startIdx = 0;
+    if (words.length && /^\d+(\.\d+)?$/.test(words[0])) { qty = parseFloat(words[0]); startIdx = 1; }
+    else if (words.length && DESCRIBE_QTY_WORDS[words[0]] != null) { qty = DESCRIBE_QTY_WORDS[words[0]]; startIdx = 1; }
+    const rest = words.slice(startIdx).filter(w => !DESCRIBE_FILLER_WORDS.has(w)).join(' ');
+    const match = matchFood(rest || seg.toLowerCase());
+    if (match) {
+      items.push({
+        name: match.label, qty, cal: match.cal * qty, protein: match.p * qty, carbs: match.c * qty, fat: match.f * qty,
+        fiber: (match.fiber || 0) * qty, sugar: (match.sugar || 0) * qty, sodium: (match.sodium || 0) * qty, cat: match.cat
+      });
+    } else if (rest) {
+      unmatched.push(seg);
+    }
+  });
+  const totals = items.reduce((acc, i) => ({
+    cal: acc.cal + i.cal, protein: acc.protein + i.protein, carbs: acc.carbs + i.carbs, fat: acc.fat + i.fat,
+    fiber: acc.fiber + i.fiber, sugar: acc.sugar + i.sugar, sodium: acc.sodium + i.sodium
+  }), { cal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 });
+  const catValue = { whole: 100, moderate: 60, treat: 20 };
+  let weighted = 0, weight = 0;
+  items.forEach(i => { const w = Math.max(i.cal, 1); weighted += catValue[i.cat] * w; weight += w; });
+  const score = weight ? Math.round(weighted / weight) : null;
+  return { items, unmatched, totals, score };
+}
+
+function healthTier(score) {
+  if (score == null) return { label: 'Not enough to judge', text: 'text-ink-300', bg: 'bg-ink-800/60', tip: "Didn't recognize enough foods to score this." };
+  if (score >= 80) return { label: 'Whole & nutritious', text: 'text-volt-400', bg: 'bg-volt-400/10', tip: 'Great choice — mostly whole foods.' };
+  if (score >= 55) return { label: 'Balanced', text: 'text-plum-400', bg: 'bg-plum-500/10', tip: 'A solid mix — nothing to worry about.' };
+  if (score >= 35) return { label: 'Moderate', text: 'text-ember-400', bg: 'bg-ember-500/10', tip: 'A bit indulgent — balance it out later today.' };
+  return { label: 'Heavy on treats', text: 'text-ember-500', bg: 'bg-ember-600/15', tip: 'Mostly processed or high-calorie — treat it as an occasional one.' };
+}
+
+function nutriScoreInfo(grade) {
+  const map = {
+    a: { label: 'Excellent (Nutri-Score A)', text: 'text-volt-400', bg: 'bg-volt-400/10', tip: 'Sourced from Open Food Facts — a top-rated product.' },
+    b: { label: 'Good (Nutri-Score B)', text: 'text-volt-400', bg: 'bg-volt-400/10', tip: 'Sourced from Open Food Facts — a solid choice.' },
+    c: { label: 'Moderate (Nutri-Score C)', text: 'text-ember-400', bg: 'bg-ember-500/10', tip: 'Sourced from Open Food Facts — fine in moderation.' },
+    d: { label: 'Less healthy (Nutri-Score D)', text: 'text-ember-500', bg: 'bg-ember-600/15', tip: 'Sourced from Open Food Facts — an occasional pick.' },
+    e: { label: 'Least healthy (Nutri-Score E)', text: 'text-ember-500', bg: 'bg-ember-600/15', tip: 'Sourced from Open Food Facts — best kept as a treat.' }
+  };
+  return map[grade] || null;
+}
+
+function heuristicHealthTier(per100) {
+  const cal = per100.calories || 0;
+  if (cal <= 0) return healthTier(null);
+  const per100kcal = (val) => (val || 0) / (cal / 100);
+  let score = 55;
+  score += Math.min(20, per100kcal(per100.protein) * 1.2);
+  score += Math.min(15, per100kcal(per100.fiber) * 3);
+  score -= Math.min(25, per100kcal(per100.sugar) * 1.1);
+  score -= Math.min(15, per100kcal(per100.sodium) / 50);
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  const tier = healthTier(score);
+  return { ...tier, label: tier.label + ' (estimated)', tip: 'No Nutri-Score on file — estimated from its nutrients.' };
+}
+
+function renderDescribeResult(root, originalText, result) {
+  const el = root.querySelector('#describeResult');
+  el.classList.remove('hidden');
+  const { items, unmatched, totals, score } = result;
+  if (!items.length) {
+    el.innerHTML = `<p class="text-sm text-ink-500 text-center py-4">Couldn't recognize any foods in that description. Try naming individual items, e.g. "2 eggs, toast, and coffee".</p>`;
+    return;
+  }
+  const tier = healthTier(score);
+  el.innerHTML = `
+    <div class="flex items-center justify-between p-3 rounded-xl ${tier.bg}">
+      <div>
+        <p class="text-sm font-semibold ${tier.text}">${tier.label}</p>
+        <p class="text-xs text-ink-400 mt-0.5">${tier.tip}</p>
+      </div>
+      ${score != null ? `<span class="font-display text-lg font-bold ${tier.text}">${score}</span>` : ''}
+    </div>
+    <div class="grid grid-cols-4 gap-2 text-center">
+      <div class="bg-ink-800/60 rounded-lg py-2"><p class="font-display font-bold text-sm">${Math.round(totals.cal)}</p><p class="text-[10px] text-ink-500 uppercase">kcal</p></div>
+      <div class="bg-ink-800/60 rounded-lg py-2"><p class="font-display font-bold text-sm">${Math.round(totals.protein)}g</p><p class="text-[10px] text-ink-500 uppercase">protein</p></div>
+      <div class="bg-ink-800/60 rounded-lg py-2"><p class="font-display font-bold text-sm">${Math.round(totals.carbs)}g</p><p class="text-[10px] text-ink-500 uppercase">carbs</p></div>
+      <div class="bg-ink-800/60 rounded-lg py-2"><p class="font-display font-bold text-sm">${Math.round(totals.fat)}g</p><p class="text-[10px] text-ink-500 uppercase">fat</p></div>
+    </div>
+    <div class="grid grid-cols-3 gap-2 text-center">
+      <div class="bg-ink-800/40 rounded-lg py-1.5"><p class="font-display font-semibold text-xs">${Math.round(totals.fiber)}g</p><p class="text-[9px] text-ink-500 uppercase">fiber</p></div>
+      <div class="bg-ink-800/40 rounded-lg py-1.5"><p class="font-display font-semibold text-xs">${Math.round(totals.sugar)}g</p><p class="text-[9px] text-ink-500 uppercase">sugar</p></div>
+      <div class="bg-ink-800/40 rounded-lg py-1.5"><p class="font-display font-semibold text-xs">${Math.round(totals.sodium)}mg</p><p class="text-[9px] text-ink-500 uppercase">sodium</p></div>
+    </div>
+    <div class="space-y-1">
+      ${items.map(i => `<div class="flex justify-between text-xs text-ink-400"><span>${i.qty > 1 ? i.qty + '× ' : ''}${esc(i.name)}</span><span>${Math.round(i.cal)} kcal</span></div>`).join('')}
+    </div>
+    ${unmatched.length ? `<p class="text-[11px] text-ink-500">Couldn't recognize: ${unmatched.map(esc).join(', ')} — add manually if needed.</p>` : ''}
+    <button type="button" id="describeAddBtn" class="btn btn-primary w-full py-2.5 rounded-xl text-sm font-semibold">Add to Meal</button>
+  `;
+  root.querySelector('#describeAddBtn').addEventListener('click', () => {
+    pendingMealPrefill = {
+      name: originalText.length > 60 ? originalText.slice(0, 57) + '…' : originalText,
+      calories: Math.round(totals.cal),
+      protein: Math.round(totals.protein),
+      carbs: Math.round(totals.carbs),
+      fat: Math.round(totals.fat)
+    };
+    closeModal();
+    openModal('mealModal');
+  });
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+let currentView = 'dashboard';
+function showView(name) {
+  currentView = name;
+  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+  document.getElementById(name + '-view').classList.remove('hidden');
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    const active = btn.dataset.view === name;
+    if (btn.classList.contains('nav-btn-mobile')) {
+      btn.classList.toggle('text-volt-400', active);
+      btn.classList.toggle('text-ink-400', !active);
+    } else {
+      btn.classList.toggle('bg-volt-400', active);
+      btn.classList.toggle('text-ink-950', active);
+      btn.classList.toggle('font-semibold', active);
+      btn.classList.toggle('text-ink-300', !active);
+    }
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.view)));
+document.getElementById('settingsBtn').addEventListener('click', () => openModal('settingsModal'));
+document.body.addEventListener('click', (e) => {
+  const opener = e.target.closest('[data-open-modal]');
+  if (opener) openModal(opener.dataset.openModal);
+});
+
+/* ============================================================
+   CHART (hand-rolled SVG line chart, zero dependencies)
+   ============================================================ */
+function lineChart(points, opts = {}) {
+  const w = opts.width || 560, h = opts.height || 200;
+  const padL = 38, padR = 14, padT = 16, padB = 26;
+  const unit = opts.unit || '';
+  const goal = opts.goal;
+
+  if (!points.length) {
+    return `<div class="h-[${h}px] flex flex-col items-center justify-center text-center gap-1 text-ink-500">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 17 9 11l4 4 8-8"/></svg>
+      <p class="text-sm">No entries yet</p>
+    </div>`;
+  }
+  if (points.length === 1) {
+    return `<div class="h-[${h}px] flex flex-col items-center justify-center text-center gap-1 text-ink-400">
+      <p class="font-display text-2xl font-semibold text-ink-50">${points[0].value}${unit}</p>
+      <p class="text-xs">Log another entry to see your trend</p>
+    </div>`;
+  }
+
+  const values = points.map(p => p.value);
+  let min = Math.min(...values), max = Math.max(...values);
+  if (goal != null) { min = Math.min(min, goal); max = Math.max(max, goal); }
+  if (min === max) { min -= 1; max += 1; }
+  const buffer = (max - min) * 0.15;
+  min -= buffer; max += buffer;
+
+  const x = i => padL + (i * (w - padL - padR)) / (points.length - 1);
+  const y = v => padT + (h - padT - padB) * (1 - (v - min) / (max - min));
+
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(p.value).toFixed(1)}`).join(' ');
+  const areaPath = `${linePath} L ${x(points.length - 1).toFixed(1)} ${(h - padB).toFixed(1)} L ${x(0).toFixed(1)} ${(h - padB).toFixed(1)} Z`;
+
+  const dots = points.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="3.5" fill="#0A0C0B" stroke="#B4FF3E" stroke-width="2"><title>${esc(formatDateShort(p.date))}: ${p.value}${unit}</title></circle>`).join('');
+
+  const gridLines = [0.25, 0.5, 0.75].map(f => {
+    const gy = padT + (h - padT - padB) * f;
+    return `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w - padR}" y2="${gy.toFixed(1)}" stroke="#1B211C" stroke-width="1"/>`;
+  }).join('');
+
+  const goalLine = goal != null ? `<line x1="${padL}" y1="${y(goal).toFixed(1)}" x2="${w - padR}" y2="${y(goal).toFixed(1)}" stroke="#FF8A5B" stroke-width="1.5" stroke-dasharray="4 4"/>
+    <text x="${w - padR}" y="${(y(goal) - 5).toFixed(1)}" text-anchor="end" font-size="10" fill="#FF8A5B">goal ${goal}${unit}</text>` : '';
+
+  const firstLabel = formatDateShort(points[0].date);
+  const lastLabel = formatDateShort(points[points.length - 1].date);
+  const maxLabel = `${max.toFixed(1)}${unit}`;
+  const minLabel = `${min.toFixed(1)}${unit}`;
+
+  return `<svg viewBox="0 0 ${w} ${h}" class="w-full h-auto" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#B4FF3E" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="#B4FF3E" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    ${gridLines}
+    ${goalLine}
+    <path d="${areaPath}" fill="url(#areaGrad)"/>
+    <path d="${linePath}" fill="none" stroke="#B4FF3E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dots}
+    <text x="${padL}" y="${padT + 4}" font-size="10" fill="#6E7A6F">${esc(maxLabel)}</text>
+    <text x="${padL}" y="${h - padB}" font-size="10" fill="#6E7A6F">${esc(minLabel)}</text>
+    <text x="${padL}" y="${h - 6}" font-size="10" fill="#6E7A6F">${esc(firstLabel)}</text>
+    <text x="${w - padR}" y="${h - 6}" text-anchor="end" font-size="10" fill="#6E7A6F">${esc(lastLabel)}</text>
+  </svg>`;
+}
+
+/* ============================================================
+   RENDER: DASHBOARD
+   ============================================================ */
+function calcStreak() {
+  const dates = new Set(DATA.workouts.map(w => w.date));
+  if (!dates.size) return 0;
+  let cursor = new Date();
+  cursor.setHours(0, 0, 0, 0);
+  const cursorStr = () => cursor.getFullYear() + '-' + String(cursor.getMonth() + 1).padStart(2, '0') + '-' + String(cursor.getDate()).padStart(2, '0');
+  if (!dates.has(cursorStr())) cursor.setDate(cursor.getDate() - 1);
+  let streak = 0;
+  while (dates.has(cursorStr())) { streak++; cursor.setDate(cursor.getDate() - 1); }
+  return streak;
+}
+function statCard(icon, label, value, sub, tint) {
+  return `<div class="card rounded-2xl p-4 shadow-card animate-slideUp">
+    <div class="flex items-center gap-2 text-ink-400 mb-2">
+      <span class="w-7 h-7 rounded-lg flex items-center justify-center ${tint}">${icon}</span>
+      <span class="text-[11px] font-semibold uppercase tracking-wide">${label}</span>
+    </div>
+    <p class="font-display text-xl sm:text-2xl font-bold leading-tight">${value}</p>
+    ${sub ? `<p class="text-xs text-ink-500 mt-0.5">${sub}</p>` : ''}
+  </div>`;
+}
+const ICONS = {
+  flame: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1.2 3-2.6 4.3-2.6 8.2A2.6 2.6 0 0 0 12 12.8a2.6 2.6 0 0 0 2.6-2.6c1 1.1 1.9 2.3 1.9 4.2A4.5 4.5 0 0 1 12 18.9a4.5 4.5 0 0 1-4.5-4.5c0-3.8 2-5.1 3.1-8.1.4.9.8 1.4 1.4 1.9-.2-2 0-3.6 0-6.2z"/></svg>`,
+  scale: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="12" cy="12" r="4"/><path d="M12 9.5v2.7l1.8 1.5"/></svg>`,
+  dumbbell: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 9v6M2 12h2M9 10v4M9 12h6M15 10v4M20 9v6M22 12h-2"/></svg>`,
+  target: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="1"/></svg>`,
+  meal: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v8a2 2 0 1 0 4 0V2"/><path d="M8 10v12"/><path d="M17 2v7a2 2 0 0 1-2 2"/><path d="M17 2v20"/></svg>`,
+  trash: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg>`,
+  chevron: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
+  clock: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`
+};
+
+function renderDashboard() {
+  const name = DATA.profile.name;
+  document.getElementById('greeting').textContent = name ? `Welcome back, ${name}` : 'Welcome back';
+  document.getElementById('todayLabel').textContent = formatDateLong(todayStr());
+
+  const unit = DATA.profile.weightUnit;
+  const goals = DATA.profile.goals;
+  const today = todayStr();
+
+  const caloriesToday = DATA.meals.filter(m => m.date === today).reduce((s, m) => s + m.calories, 0);
+  const sortedLogs = [...DATA.bodyLogs].sort((a, b) => a.date.localeCompare(b.date));
+  const latestWeight = sortedLogs[sortedLogs.length - 1];
+  const prevWeight = sortedLogs[sortedLogs.length - 2];
+  let weightDeltaLabel = 'No entries yet';
+  if (latestWeight && prevWeight) {
+    const d = +(latestWeight.weight - prevWeight.weight).toFixed(1);
+    weightDeltaLabel = (d === 0 ? 'No change' : (d > 0 ? `+${d}` : d) + ` ${unit} vs last`);
+  } else if (latestWeight) {
+    weightDeltaLabel = 'First entry logged';
+  }
+
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 6);
+  const weekAgoStr = weekAgo.toISOString().slice(0, 10);
+  const workoutsThisWeek = DATA.workouts.filter(w => w.date >= weekAgoStr && w.date <= today).length;
+
+  const streak = calcStreak();
+
+  document.getElementById('statCards').innerHTML = [
+    statCard(ICONS.flame, 'Calories today', `${Math.round(caloriesToday).toLocaleString()}`, goals.calories ? `of ${goals.calories.toLocaleString()} kcal goal` : 'no goal set', 'bg-ember-500/15 text-ember-400'),
+    statCard(ICONS.scale, 'Weight', latestWeight ? `${latestWeight.weight} ${unit}` : '—', weightDeltaLabel, 'bg-plum-500/15 text-plum-400'),
+    statCard(ICONS.dumbbell, 'This week', `${workoutsThisWeek}`, workoutsThisWeek === 1 ? 'workout logged' : 'workouts logged', 'bg-volt-400/15 text-volt-400'),
+    statCard(ICONS.target, 'Streak', `${streak} ${streak === 1 ? 'day' : 'days'}`, streak ? 'keep it going' : 'log a workout to start', 'bg-ember-500/15 text-ember-400')
+  ].join('');
+
+  const chartPoints = sortedLogs.slice(-14).map(l => ({ date: l.date, value: l.weight }));
+  document.getElementById('dashChart').innerHTML = lineChart(chartPoints, { width: 480, height: 180, unit: ' ' + unit, goal: goals.weightGoal });
+
+  const activity = [
+    ...DATA.workouts.map(w => ({ type: 'workout', date: w.date, time: '', label: w.name, meta: `${w.exercises.length} exercise${w.exercises.length !== 1 ? 's' : ''}${w.duration ? ' · ' + w.duration + ' min' : ''}` })),
+    ...DATA.meals.map(m => ({ type: 'meal', date: m.date, time: m.time, label: m.name, meta: `${Math.round(m.calories)} kcal` })),
+    ...DATA.bodyLogs.map(b => ({ type: 'body', date: b.date, time: '', label: `Weighed in at ${b.weight} ${unit}`, meta: b.bodyFat ? `${b.bodyFat}% body fat` : '' }))
+  ].sort((a, b) => (b.date + (b.time || '')).localeCompare(a.date + (a.time || ''))).slice(0, 6);
+
+  const feed = document.getElementById('activityFeed');
+  if (!activity.length) {
+    feed.innerHTML = `<div class="text-center py-8 text-ink-500">
+      <p class="text-sm">Nothing logged yet.</p>
+      <p class="text-xs mt-1">Start by logging a workout, weigh-in, or meal.</p>
+    </div>`;
+  } else {
+    const tint = { workout: 'bg-volt-400/15 text-volt-400', meal: 'bg-ember-500/15 text-ember-400', body: 'bg-plum-500/15 text-plum-400' };
+    const ic = { workout: ICONS.dumbbell, meal: ICONS.meal, body: ICONS.scale };
+    feed.innerHTML = activity.map(a => `
+      <div class="flex items-center gap-3">
+        <span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${tint[a.type]}">${ic[a.type]}</span>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium truncate">${esc(a.label)}</p>
+          <p class="text-xs text-ink-500">${esc(formatDateShort(a.date))}${a.meta ? ' · ' + esc(a.meta) : ''}</p>
+        </div>
+      </div>`).join('');
+  }
+}
+
+/* ============================================================
+   RENDER: WORKOUTS
+   ============================================================ */
+let expandedWorkouts = new Set();
+function renderWorkouts() {
+  const list = document.getElementById('workoutsList');
+  const workouts = [...DATA.workouts].sort((a, b) => b.date.localeCompare(a.date));
+  if (!workouts.length) {
+    list.innerHTML = emptyState(ICONS.dumbbell, 'No workouts yet', 'Log your first session to start building your history.');
+    return;
+  }
+  list.innerHTML = workouts.map(w => {
+    const volume = w.exercises.reduce((s, ex) => s + ex.sets.reduce((s2, set) => s2 + set.weight * set.reps, 0), 0);
+    const totalSets = w.exercises.reduce((s, ex) => s + ex.sets.length, 0);
+    const isOpen = expandedWorkouts.has(w.id);
+    return `<div class="card rounded-2xl shadow-card overflow-hidden animate-slideUp">
+      <button class="w-full flex items-center justify-between gap-3 p-4 text-left" data-toggle-workout="${w.id}">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-11 h-11 rounded-xl bg-volt-400/15 text-volt-400 flex flex-col items-center justify-center shrink-0 text-[10px] font-bold leading-none">
+            <span>${parseLocalDate(w.date).toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}</span>
+            <span class="text-sm">${parseLocalDate(w.date).getDate()}</span>
+          </div>
+          <div class="min-w-0">
+            <p class="font-semibold text-sm truncate">${esc(w.name)}</p>
+            <p class="text-xs text-ink-500">${w.exercises.length} exercises · ${totalSets} sets${w.duration ? ' · ' + w.duration + ' min' : ''}${volume ? ' · ' + Math.round(volume).toLocaleString() + ' vol' : ''}</p>
+          </div>
+        </div>
+        <span class="text-ink-400 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}">${ICONS.chevron}</span>
+      </button>
+      <div class="${isOpen ? '' : 'hidden'} px-4 pb-4 border-t border-ink-800/70 pt-3 space-y-3">
+        ${w.exercises.map(ex => `
+          <div>
+            <p class="text-sm font-medium mb-1">${esc(ex.name)}</p>
+            <div class="flex flex-wrap gap-1.5">
+              ${ex.sets.map((s, i) => `<span class="text-xs bg-ink-800 text-ink-300 rounded-md px-2 py-1">${i + 1}: ${s.weight}${DATA.profile.weightUnit} × ${s.reps}</span>`).join('')}
+            </div>
+          </div>`).join('')}
+        ${w.notes ? `<p class="text-xs text-ink-400 italic pt-1 border-t border-ink-800/70">"${esc(w.notes)}"</p>` : ''}
+        <div class="flex justify-end pt-1">
+          <button class="btn btn-danger text-xs font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5" data-delete-workout="${w.id}">${ICONS.trash} Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   RENDER: PROGRESS
+   ============================================================ */
+function renderProgress() {
+  const unit = DATA.profile.weightUnit;
+  const goal = DATA.profile.goals.weightGoal;
+  const sortedLogs = [...DATA.bodyLogs].sort((a, b) => a.date.localeCompare(b.date));
+  const points = sortedLogs.map(l => ({ date: l.date, value: l.weight }));
+  document.getElementById('progressChart').innerHTML = lineChart(points, { width: 640, height: 240, unit: ' ' + unit, goal });
+
+  const latest = sortedLogs[sortedLogs.length - 1];
+  const first = sortedLogs[0];
+  const goalCard = document.getElementById('goalCard');
+  if (goal == null) {
+    goalCard.innerHTML = `<h2 class="font-display font-semibold text-base mb-3">Goal</h2>
+      <p class="text-sm text-ink-400 mb-3">No goal weight set.</p>
+      <button class="btn btn-ghost text-xs font-medium px-3 py-2 rounded-lg" data-open-modal="settingsModal">Set a goal</button>`;
+  } else {
+    const remaining = latest ? +(latest.weight - goal).toFixed(1) : null;
+    const totalToGo = first && latest ? Math.abs(+(first.weight - goal).toFixed(1)) : null;
+    const progressPct = (first && latest && totalToGo) ? Math.min(100, Math.max(0, ((Math.abs(first.weight - latest.weight)) / totalToGo) * 100)) : 0;
+    goalCard.innerHTML = `<h2 class="font-display font-semibold text-base mb-3">Goal</h2>
+      <p class="font-display text-2xl font-bold">${goal} ${unit}</p>
+      ${remaining !== null ? `<p class="text-xs text-ink-400 mt-1">${remaining === 0 ? "You're at your goal!" : `${Math.abs(remaining)} ${unit} ${remaining > 0 ? 'to lose' : 'to gain'}`}</p>` : ''}
+      <div class="bar-track h-2 mt-4"><div class="bar-fill bg-volt-400" style="width:${progressPct}%"></div></div>
+      <p class="text-[11px] text-ink-500 mt-2">${Math.round(progressPct)}% of the way there</p>`;
+  }
+
+  const listEl = document.getElementById('bodyLogList');
+  const entries = [...DATA.bodyLogs].sort((a, b) => b.date.localeCompare(a.date));
+  if (!entries.length) {
+    listEl.innerHTML = emptyState(ICONS.scale, 'No entries yet', 'Log your weight to start tracking your trend.', true);
+  } else {
+    listEl.innerHTML = entries.map(e => `
+      <div class="flex items-center justify-between gap-3 py-2.5 border-b border-ink-800/60 last:border-0">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="w-8 h-8 rounded-lg bg-plum-500/15 text-plum-400 flex items-center justify-center shrink-0">${ICONS.scale}</span>
+          <div class="min-w-0">
+            <p class="text-sm font-medium">${e.weight} ${unit}${e.bodyFat ? ` · ${e.bodyFat}% BF` : ''}</p>
+            <p class="text-xs text-ink-500 truncate">${esc(formatDateFull(e.date))}${e.notes ? ' · ' + esc(e.notes) : ''}</p>
+          </div>
+        </div>
+        <button class="icon-btn w-8 h-8 rounded-lg flex items-center justify-center text-ink-500 hover:text-ember-400 shrink-0" data-delete-bodylog="${e.id}">${ICONS.trash}</button>
+      </div>`).join('');
+  }
+}
+
+/* ============================================================
+   RENDER: MEALS
+   ============================================================ */
+function macroBar(label, value, goalVal, color) {
+  const pct = goalVal ? Math.min(100, (value / goalVal) * 100) : 0;
+  return `<div>
+    <div class="flex justify-between text-xs mb-1">
+      <span class="font-medium text-ink-300">${label}</span>
+      <span class="text-ink-500">${Math.round(value)}${goalVal ? ' / ' + Math.round(goalVal) : ''}g</span>
+    </div>
+    <div class="bar-track h-1.5"><div class="bar-fill ${color}" style="width:${pct}%"></div></div>
+  </div>`;
+}
+function renderMeals() {
+  const today = todayStr();
+  const goals = DATA.profile.goals;
+  const todaysMeals = DATA.meals.filter(m => m.date === today);
+  const totals = todaysMeals.reduce((acc, m) => ({
+    calories: acc.calories + m.calories, protein: acc.protein + m.protein, carbs: acc.carbs + m.carbs, fat: acc.fat + m.fat
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+  const calPct = goals.calories ? Math.min(100, (totals.calories / goals.calories) * 100) : 0;
+  document.getElementById('macroSummary').innerHTML = `
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-display font-semibold text-base">Today</h2>
+      <span class="text-xs text-ink-500">${formatDateShort(today)}</span>
+    </div>
+    <div class="flex items-end gap-2 mb-1">
+      <span class="font-display text-3xl font-bold">${Math.round(totals.calories).toLocaleString()}</span>
+      <span class="text-sm text-ink-500 mb-1">/ ${goals.calories ? goals.calories.toLocaleString() + ' kcal' : 'no goal'}</span>
+    </div>
+    <div class="bar-track h-2 mb-5"><div class="bar-fill bg-ember-500" style="width:${calPct}%"></div></div>
+    <div class="grid sm:grid-cols-3 gap-4">
+      ${macroBar('Protein', totals.protein, goals.protein, 'bg-volt-400')}
+      ${macroBar('Carbs', totals.carbs, goals.carbs, 'bg-ember-500')}
+      ${macroBar('Fat', totals.fat, goals.fat, 'bg-plum-400')}
+    </div>`;
+
+  const byDay = {};
+  DATA.meals.forEach(m => { (byDay[m.date] = byDay[m.date] || []).push(m); });
+  const days = Object.keys(byDay).sort((a, b) => b.localeCompare(a));
+
+  const container = document.getElementById('mealsByDay');
+  if (!days.length) {
+    container.innerHTML = emptyState(ICONS.meal, 'No meals logged', 'Log a meal to start tracking your nutrition.', true);
+    return;
+  }
+  container.innerHTML = days.map(date => {
+    const meals = byDay[date].sort((a, b) => b.time.localeCompare(a.time));
+    const dayTotal = meals.reduce((s, m) => s + m.calories, 0);
+    return `<div class="animate-slideUp">
+      <div class="flex items-center justify-between mb-2 px-0.5">
+        <h3 class="font-display font-semibold text-sm">${esc(formatDateFull(date))}</h3>
+        <span class="text-xs text-ink-500">${Math.round(dayTotal).toLocaleString()} kcal</span>
+      </div>
+      <div class="card rounded-2xl shadow-card divide-y divide-ink-800/60">
+        ${meals.map(m => `
+          <div class="flex items-center justify-between gap-3 p-3.5">
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="w-8 h-8 rounded-lg bg-ember-500/15 text-ember-400 flex items-center justify-center shrink-0">${ICONS.meal}</span>
+              <div class="min-w-0">
+                <p class="text-sm font-medium truncate">${esc(m.name)}</p>
+                <p class="text-xs text-ink-500 flex items-center gap-1">${ICONS.clock} ${formatTime12(m.time)} · ${Math.round(m.calories)} kcal
+                  ${(m.protein || m.carbs || m.fat) ? `· P${Math.round(m.protein)} C${Math.round(m.carbs)} F${Math.round(m.fat)}` : ''}
+                </p>
+              </div>
+            </div>
+            <button class="icon-btn w-8 h-8 rounded-lg flex items-center justify-center text-ink-500 hover:text-ember-400 shrink-0" data-delete-meal="${m.id}">${ICONS.trash}</button>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function emptyState(icon, title, sub, cardWrap) {
+  const inner = `<div class="text-center py-10 text-ink-500">
+    <div class="w-12 h-12 rounded-full bg-ink-800 flex items-center justify-center mx-auto mb-3 text-ink-400">${icon}</div>
+    <p class="text-sm font-medium text-ink-300">${title}</p>
+    <p class="text-xs mt-1">${sub}</p>
+  </div>`;
+  return cardWrap ? inner : `<div class="card rounded-2xl shadow-card">${inner}</div>`;
+}
+
+/* ============================================================
+   DELEGATED DELETE HANDLERS
+   ============================================================ */
+document.body.addEventListener('click', (e) => {
+  const toggleBtn = e.target.closest('[data-toggle-workout]');
+  if (toggleBtn) {
+    const id = toggleBtn.dataset.toggleWorkout;
+    if (expandedWorkouts.has(id)) expandedWorkouts.delete(id); else expandedWorkouts.add(id);
+    renderWorkouts();
+    return;
+  }
+  const delWorkout = e.target.closest('[data-delete-workout]');
+  if (delWorkout) {
+    if (confirm('Delete this workout?')) {
+      DATA.workouts = DATA.workouts.filter(w => w.id !== delWorkout.dataset.deleteWorkout);
+      saveData(); toast('Workout deleted.', 'danger'); renderAll();
+    }
+    return;
+  }
+  const delBody = e.target.closest('[data-delete-bodylog]');
+  if (delBody) {
+    if (confirm('Delete this entry?')) {
+      DATA.bodyLogs = DATA.bodyLogs.filter(b => b.id !== delBody.dataset.deleteBodylog);
+      saveData(); toast('Entry deleted.', 'danger'); renderAll();
+    }
+    return;
+  }
+  const delMeal = e.target.closest('[data-delete-meal]');
+  if (delMeal) {
+    if (confirm('Delete this meal?')) {
+      DATA.meals = DATA.meals.filter(m => m.id !== delMeal.dataset.deleteMeal);
+      saveData(); toast('Meal deleted.', 'danger'); renderAll();
+    }
+    return;
+  }
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function renderAll() {
+  renderDashboard();
+  renderWorkouts();
+  renderProgress();
+  renderMeals();
+}
+
+initAuth();
+if (DATA.profile.account && localStorage.getItem(SESSION_KEY) === '1') {
+  showAppShell();
+} else {
+  showAuthView();
+}
+</script>
+</body>
+</html>

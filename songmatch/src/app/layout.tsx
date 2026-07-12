@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import { NavBar } from "@/components/NavBar";
 import "./globals.css";
 
@@ -13,9 +13,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  axes: ["opsz", "SOFT", "WONK"],
+});
+
 export const metadata: Metadata = {
   title: "SongMatch",
-  description: "Match songwriters with artists.",
+  description: "Where lyrics find their voice.",
 };
 
 export default function RootLayout({
@@ -26,11 +32,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-full flex-col bg-ink-50 text-ink-900">
+        <div className="bg-grain" />
         <NavBar />
-        <div className="flex-1">{children}</div>
+        <div className="relative z-10 flex-1">{children}</div>
       </body>
     </html>
   );

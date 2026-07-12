@@ -9,8 +9,10 @@ export default async function NewSubmissionPage() {
   }
 
   return (
-    <div className="max-w-xl">
-      <h1 className="mb-6 text-2xl font-bold">New Submission</h1>
+    <div className="mx-auto max-w-xl">
+      <h1 className="mb-6 font-display text-2xl font-semibold text-ink-900">
+        New Submission
+      </h1>
       <SubmissionForm />
     </div>
   );

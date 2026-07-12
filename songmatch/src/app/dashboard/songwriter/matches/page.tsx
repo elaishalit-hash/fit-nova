@@ -21,7 +21,9 @@ export default async function SongwriterMatchesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">My Matches</h1>
+      <h1 className="font-display text-2xl font-semibold text-ink-900">
+        My Matches
+      </h1>
       <MatchList
         matches={matches.map((m) => ({
           id: m.id,

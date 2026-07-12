@@ -18,24 +18,22 @@ export default async function AcceptTermsPage() {
   const version = await getCurrentTermsVersion();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
-      <h1 className="mb-2 text-2xl font-bold">
+    <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+      <h1 className="mb-2 font-display text-2xl font-semibold text-ink-900">
         Before you can match, accept the Terms
       </h1>
-      <p className="mb-6 text-sm text-neutral-500">
-        Version {version.versionLabel}
-      </p>
-      <div className="mb-6 max-h-96 overflow-y-auto rounded-md border border-neutral-200 p-4">
+      <p className="mb-6 text-sm text-ink-500">Version {version.versionLabel}</p>
+      <div className="card-surface mb-6 max-h-96 overflow-y-auto rounded-2xl p-5">
         <TermsBody markdown={version.bodyMarkdown} />
       </div>
       <form action={acceptTermsAction} className="flex flex-col gap-4">
-        <label className="flex items-start gap-2 text-sm">
+        <label className="flex items-start gap-2.5 rounded-xl border border-ink-200 bg-ink-25 p-4 text-sm text-ink-700 has-[:checked]:border-flame-400 has-[:checked]:bg-flame-50">
           <input
             type="checkbox"
             name="accept"
             required
             data-testid="terms-checkbox"
-            className="mt-1"
+            className="mt-0.5 h-4 w-4 accent-flame-500"
           />
           I have read and accept these Terms & Conditions, including the
           copyright co-ownership clause in Section 3.
@@ -43,9 +41,9 @@ export default async function AcceptTermsPage() {
         <button
           type="submit"
           data-testid="terms-accept-submit"
-          className="rounded-md bg-rose-600 px-4 py-2 font-semibold text-white hover:bg-rose-700"
+          className="btn btn-primary rounded-full px-4 py-2.5 font-semibold"
         >
-          Accept & continue
+          Accept &amp; continue
         </button>
       </form>
     </main>

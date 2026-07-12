@@ -38,40 +38,30 @@ async function login(page: Page, email: string, password: string) {
 
 // Clicks "pass" through the deck until a card with the given title shows up,
 // then clicks the requested decision on it. Returns whether it was found.
-// Next.js dev mode occasionally serves a deck snapshot that lags a
-// just-created row by one request, so if the deck runs dry without finding
-// the target, the page is reloaded (a fresh server fetch) and retried a
-// couple of times before giving up.
 async function swipeUntilTitleFound(
   page: Page,
   title: string,
   decision: "like-button" | "pass-button" = "like-button"
 ) {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt > 0) {
-      await page.reload();
+  for (let i = 0; i < 30; i++) {
+    const empty = await page
+      .getByTestId("deck-empty")
+      .isVisible()
+      .catch(() => false);
+    if (empty) return false;
+
+    const cardTitle = await page
+      .getByTestId("deck-card-title")
+      .first()
+      .innerText();
+
+    if (cardTitle === title) {
+      await page.getByTestId(decision).click();
+      await page.waitForTimeout(600);
+      return true;
     }
-
-    for (let i = 0; i < 20; i++) {
-      const empty = await page
-        .getByTestId("deck-empty")
-        .isVisible()
-        .catch(() => false);
-      if (empty) break;
-
-      const cardTitle = await page
-        .getByTestId("deck-card-title")
-        .first()
-        .innerText();
-
-      if (cardTitle === title) {
-        await page.getByTestId(decision).click();
-        await page.waitForTimeout(350);
-        return true;
-      }
-      await page.getByTestId("pass-button").click();
-      await page.waitForTimeout(350);
-    }
+    await page.getByTestId("pass-button").click();
+    await page.waitForTimeout(600);
   }
   return false;
 }
@@ -251,10 +241,7 @@ test("submission with a picture and audio renders for the songwriter and a match
 
   // A brand-new artist account has an empty swipe history, so its deck only
   // contains long-lived broadcast submissions (like the seeded demo one)
-  // plus ours — a small, predictable set to page through. Next.js dev mode
-  // occasionally serves a deck snapshot that lags a just-created row by one
-  // request, so a full reload is retried a couple of times if the target
-  // card isn't found before the deck runs out.
+  // plus ours — a small, predictable set to page through.
   const artistCtx = await browser.newContext();
   const artistPage = await artistCtx.newPage();
   await signup(artistPage, {
@@ -263,41 +250,39 @@ test("submission with a picture and audio renders for the songwriter and a match
     role: "ARTIST",
   });
 
+  await artistPage.goto("/dashboard/artist");
+
   let found = false;
-  for (let attempt = 0; attempt < 3 && !found; attempt++) {
-    await artistPage.goto("/dashboard/artist");
+  for (let i = 0; i < 30; i++) {
+    const empty = await artistPage
+      .getByTestId("deck-empty")
+      .isVisible()
+      .catch(() => false);
+    if (empty) break;
 
-    for (let i = 0; i < 10; i++) {
-      const empty = await artistPage
-        .getByTestId("deck-empty")
-        .isVisible()
-        .catch(() => false);
-      if (empty) break;
+    const cardTitle = await artistPage
+      .getByTestId("deck-card-title")
+      .first()
+      .innerText();
 
-      const cardTitle = await artistPage
-        .getByTestId("deck-card-title")
-        .first()
-        .innerText();
-
-      if (cardTitle === songTitle) {
-        await expect(
-          artistPage.getByTestId("deck-card-image").first()
-        ).toBeVisible();
-        // Native <audio controls> has a shadow-DOM control bar that
-        // Chromium can take a moment to paint, which briefly leaves the
-        // element with a zero-height box even once display/visibility are
-        // already correct — that's a browser rendering-timing detail, not
-        // something our app controls. What matters here is that our code
-        // put the right <audio src> in the DOM.
-        const audio = artistPage.getByTestId("deck-card-audio").first();
-        await expect(audio).toBeAttached();
-        await expect(audio).toHaveAttribute("src", /demo\.wav$/);
-        found = true;
-        break;
-      }
-      await artistPage.getByTestId("pass-button").click();
-      await artistPage.waitForTimeout(350);
+    if (cardTitle === songTitle) {
+      await expect(
+        artistPage.getByTestId("deck-card-image").first()
+      ).toBeVisible();
+      // Native <audio controls> has a shadow-DOM control bar that
+      // Chromium can take a moment to paint, which briefly leaves the
+      // element with a zero-height box even once display/visibility are
+      // already correct — that's a browser rendering-timing detail, not
+      // something our app controls. What matters here is that our code
+      // put the right <audio src> in the DOM.
+      const audio = artistPage.getByTestId("deck-card-audio").first();
+      await expect(audio).toBeAttached();
+      await expect(audio).toHaveAttribute("src", /demo\.wav$/);
+      found = true;
+      break;
     }
+    await artistPage.getByTestId("pass-button").click();
+    await artistPage.waitForTimeout(600);
   }
   expect(found).toBe(true);
 

@@ -41,23 +41,30 @@ export default async function MatchDetailPage({
   const counterpart = viewerIsSongwriter ? match.artist : match.songwriter;
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
-      <div>
-        <h1 className="text-2xl font-bold">{match.submission.title}</h1>
-        <p className="mt-1 text-neutral-500">
-          Matched with {counterpart.displayName}
-        </p>
+    <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10 sm:px-6">
+      <div className="animate-fade-up flex items-center gap-4">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-flame-400 to-plum-400 font-display text-2xl font-semibold text-white shadow-glow">
+          {counterpart.displayName.slice(0, 1).toUpperCase()}
+        </span>
+        <div>
+          <h1 className="font-display text-2xl font-semibold text-ink-900">
+            {match.submission.title}
+          </h1>
+          <p className="mt-0.5 text-ink-500">
+            Matched with {counterpart.displayName}
+          </p>
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 text-sm">
+      <div className="flex flex-wrap gap-2 text-sm">
         <span
-          className="rounded-full bg-rose-100 px-3 py-1 font-semibold text-rose-700"
+          className="rounded-full bg-flame-50 px-3 py-1 font-semibold text-flame-700"
           data-testid="match-detail-copyright"
         >
           {match.copyrightSharePercent}% platform copyright share
         </span>
         <span
-          className="rounded-full bg-neutral-100 px-3 py-1 font-semibold text-neutral-600"
+          className="rounded-full bg-ink-100 px-3 py-1 font-semibold text-ink-600"
           data-testid="match-detail-terms"
         >
           Terms {match.termsVersion.versionLabel}
@@ -69,7 +76,7 @@ export default async function MatchDetailPage({
         <img
           src={match.submission.imageUrl}
           alt=""
-          className="h-56 w-full rounded-lg object-cover"
+          className="h-56 w-full rounded-2xl object-cover shadow-card"
         />
       )}
 
@@ -82,14 +89,16 @@ export default async function MatchDetailPage({
         />
       )}
 
-      <div className="rounded-lg border border-neutral-200 p-4">
-        <p className="whitespace-pre-wrap font-mono text-sm text-neutral-700">
+      <div className="card-surface rounded-2xl p-4">
+        <p className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-ink-700">
           {match.submission.lyricsBody}
         </p>
       </div>
 
       <div>
-        <h2 className="mb-2 text-lg font-semibold">Messages</h2>
+        <h2 className="mb-2 font-display text-lg font-semibold text-ink-900">
+          Messages
+        </h2>
         <MessageThread
           matchId={match.id}
           currentUserId={session.user.id}

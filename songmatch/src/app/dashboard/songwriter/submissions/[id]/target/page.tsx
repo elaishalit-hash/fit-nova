@@ -33,8 +33,10 @@ export default async function TargetSubmissionPage({
   return (
     <div className="flex flex-col items-center gap-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">Who should see &ldquo;{submission.title}&rdquo;?</h1>
-        <p className="mt-1 text-sm text-neutral-500">
+        <h1 className="font-display text-2xl font-semibold text-ink-900">
+          Who should see &ldquo;{submission.title}&rdquo;?
+        </h1>
+        <p className="mt-1 text-sm text-ink-500">
           Swipe right on any artist you&apos;d like to pitch this to.
         </p>
       </div>

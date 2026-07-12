@@ -14,25 +14,32 @@ export function SubmissionCard({
   submission: SubmissionCardData;
 }) {
   return (
-    <div className="flex h-full flex-col gap-3">
-      {submission.imageUrl && (
+    <div className="flex h-full flex-col gap-3.5">
+      {submission.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={submission.imageUrl}
           alt=""
           data-testid="deck-card-image"
-          className="h-36 w-full rounded-md object-cover"
+          className="h-36 w-full rounded-xl object-cover"
         />
+      ) : (
+        <div className="flex h-36 items-center justify-center rounded-xl bg-gradient-to-br from-flame-100 to-plum-100 text-3xl">
+          🎶
+        </div>
       )}
-      <h2 className="text-xl font-bold" data-testid="deck-card-title">
-        {submission.title}
-      </h2>
-      <p className="text-xs uppercase tracking-wide text-neutral-400">
-        by {submission.songwriter.displayName}
-      </p>
-      {submission.genreTags && (
-        <p className="text-xs text-neutral-400">{submission.genreTags}</p>
-      )}
+      <div>
+        <h2
+          className="line-clamp-2 font-display text-2xl font-semibold text-ink-900"
+          data-testid="deck-card-title"
+        >
+          {submission.title}
+        </h2>
+        <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-ink-400">
+          by {submission.songwriter.displayName}
+          {submission.genreTags ? ` · ${submission.genreTags}` : ""}
+        </p>
+      </div>
       {submission.audioUrl && (
         <audio
           controls
@@ -41,7 +48,7 @@ export function SubmissionCard({
           className="w-full"
         />
       )}
-      <p className="whitespace-pre-wrap font-mono text-sm text-neutral-700">
+      <p className="whitespace-pre-wrap rounded-lg bg-ink-50 p-3 font-mono text-sm leading-relaxed text-ink-700">
         {submission.lyricsBody}
       </p>
     </div>

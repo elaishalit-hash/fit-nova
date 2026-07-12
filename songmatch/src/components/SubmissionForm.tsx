@@ -13,75 +13,77 @@ export function SubmissionForm() {
     <form
       action={action}
       encType="multipart/form-data"
-      className="flex flex-col gap-4"
+      className="card-surface flex flex-col gap-5 rounded-2xl p-6"
     >
-      <label className="flex flex-col gap-1 text-sm">
-        Title
+      <label className="flex flex-col gap-1.5">
+        <span className="field-label">Title</span>
         <input
           name="title"
           type="text"
           required
           data-testid="submission-title"
-          className="rounded-md border border-neutral-300 px-3 py-2"
+          className="field"
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Lyrics
+      <label className="flex flex-col gap-1.5">
+        <span className="field-label">Lyrics</span>
         <textarea
           name="lyricsBody"
           required
           rows={8}
           data-testid="submission-lyrics"
-          className="rounded-md border border-neutral-300 px-3 py-2 font-mono text-sm"
+          className="field font-mono"
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Genre tags (comma separated, optional)
+      <label className="flex flex-col gap-1.5">
+        <span className="field-label">Genre tags (optional)</span>
         <input
           name="genreTags"
           type="text"
           placeholder="pop, ballad"
-          className="rounded-md border border-neutral-300 px-3 py-2"
+          className="field"
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Attach a lyric sheet (optional — PDF/TXT)
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5">
+          <span className="field-label">Cover picture (optional)</span>
+          <input
+            name="image"
+            type="file"
+            accept="image/*"
+            data-testid="submission-image"
+            className="field cursor-pointer file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-ink-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-ink-700 hover:file:bg-ink-150"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="field-label">Your music (optional)</span>
+          <input
+            name="audio"
+            type="file"
+            accept="audio/*"
+            data-testid="submission-audio"
+            className="field cursor-pointer file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-ink-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-ink-700 hover:file:bg-ink-150"
+          />
+        </label>
+      </div>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="field-label">Lyric sheet attachment (optional)</span>
         <input
           name="file"
           type="file"
           accept=".pdf,.txt"
-          className="rounded-md border border-neutral-300 px-3 py-2"
+          className="field cursor-pointer file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-ink-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-ink-700 hover:file:bg-ink-150"
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Cover picture (optional)
-        <input
-          name="image"
-          type="file"
-          accept="image/*"
-          data-testid="submission-image"
-          className="rounded-md border border-neutral-300 px-3 py-2"
-        />
-      </label>
-
-      <label className="flex flex-col gap-1 text-sm">
-        Your music (optional — a demo or recording of this song)
-        <input
-          name="audio"
-          type="file"
-          accept="audio/*"
-          data-testid="submission-audio"
-          className="rounded-md border border-neutral-300 px-3 py-2"
-        />
-      </label>
-
-      <fieldset className="grid grid-cols-2 gap-3">
-        <label className="flex cursor-pointer flex-col gap-1 rounded-lg border border-neutral-300 p-4 text-sm has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50">
-          <span className="flex items-center gap-2 font-semibold">
+      <fieldset className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label className="flex cursor-pointer flex-col gap-1 rounded-xl border border-ink-200 bg-ink-25 p-4 text-sm transition-colors has-[:checked]:border-flame-400 has-[:checked]:bg-flame-50">
+          <span className="flex items-center gap-2 font-semibold text-ink-900">
             <input
               type="radio"
               name="targetMode"
@@ -91,12 +93,12 @@ export function SubmissionForm() {
             />
             Target specific artists
           </span>
-          <span className="text-xs text-neutral-500">
+          <span className="text-xs text-ink-500">
             You&apos;ll swipe through artist profiles next.
           </span>
         </label>
-        <label className="flex cursor-pointer flex-col gap-1 rounded-lg border border-neutral-300 p-4 text-sm has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50">
-          <span className="flex items-center gap-2 font-semibold">
+        <label className="flex cursor-pointer flex-col gap-1 rounded-xl border border-ink-200 bg-ink-25 p-4 text-sm transition-colors has-[:checked]:border-flame-400 has-[:checked]:bg-flame-50">
+          <span className="flex items-center gap-2 font-semibold text-ink-900">
             <input
               type="radio"
               name="targetMode"
@@ -105,14 +107,17 @@ export function SubmissionForm() {
             />
             Broadcast to all artists
           </span>
-          <span className="text-xs text-neutral-500">
+          <span className="text-xs text-ink-500">
             Any artist can discover and like this.
           </span>
         </label>
       </fieldset>
 
       {state?.error && (
-        <p className="text-sm text-red-600" data-testid="submission-error">
+        <p
+          className="rounded-lg bg-flame-50 px-3 py-2 text-sm font-medium text-flame-700"
+          data-testid="submission-error"
+        >
           {state.error}
         </p>
       )}
@@ -121,7 +126,7 @@ export function SubmissionForm() {
         type="submit"
         disabled={pending}
         data-testid="submission-submit"
-        className="rounded-md bg-rose-600 px-4 py-2 font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
+        className="btn btn-primary rounded-full px-4 py-2.5 font-semibold disabled:opacity-60"
       >
         {pending ? "Saving..." : "Save submission"}
       </button>

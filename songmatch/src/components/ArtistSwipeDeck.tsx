@@ -22,9 +22,11 @@ export function ArtistSwipeDeck({
       {lastMatchTitle && (
         <p
           data-testid="match-banner"
-          className="rounded-md bg-rose-100 px-4 py-2 text-sm font-semibold text-rose-700"
+          className="animate-fade-up flex items-center gap-2 rounded-full bg-gradient-to-r from-flame-500 to-plum-500 px-4 py-2 text-sm font-semibold text-white shadow-glow"
         >
-          It&apos;s a match on &ldquo;{lastMatchTitle}&rdquo;! Check your matches.
+          <span>✨</span>
+          It&apos;s a match on &ldquo;{lastMatchTitle}&rdquo;! Check your
+          matches.
         </p>
       )}
       <SwipeDeck

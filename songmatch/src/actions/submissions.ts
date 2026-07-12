@@ -4,9 +4,12 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hasAcceptedCurrentTerms } from "@/lib/terms";
-import { saveFile } from "@/lib/storage";
+import { saveFile, UploadValidationError } from "@/lib/storage";
 
 export type SubmissionFormState = { error?: string };
+
+const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "gif"];
+const AUDIO_EXTENSIONS = ["mp3", "wav", "m4a", "ogg", "aac", "flac"];
 
 export async function createSubmissionAction(
   _prevState: SubmissionFormState | undefined,
@@ -27,6 +30,8 @@ export async function createSubmissionAction(
   const genreTags = String(formData.get("genreTags") ?? "").trim();
   const targetMode = String(formData.get("targetMode") ?? "");
   const file = formData.get("file");
+  const image = formData.get("image");
+  const audio = formData.get("audio");
 
   if (!title || !lyricsBody) {
     return { error: "Title and lyrics are required." };
@@ -37,11 +42,41 @@ export async function createSubmissionAction(
 
   let fileUrl: string | undefined;
   let fileName: string | undefined;
-  if (file instanceof File && file.size > 0) {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const saved = await saveFile(buffer, file.name);
-    fileUrl = saved.url;
-    fileName = file.name;
+  let imageUrl: string | undefined;
+  let imageFileName: string | undefined;
+  let audioUrl: string | undefined;
+  let audioFileName: string | undefined;
+
+  try {
+    if (file instanceof File && file.size > 0) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const saved = await saveFile(buffer, file.name);
+      fileUrl = saved.url;
+      fileName = file.name;
+    }
+
+    if (image instanceof File && image.size > 0) {
+      const buffer = Buffer.from(await image.arrayBuffer());
+      const saved = await saveFile(buffer, image.name, {
+        allowedExtensions: IMAGE_EXTENSIONS,
+      });
+      imageUrl = saved.url;
+      imageFileName = image.name;
+    }
+
+    if (audio instanceof File && audio.size > 0) {
+      const buffer = Buffer.from(await audio.arrayBuffer());
+      const saved = await saveFile(buffer, audio.name, {
+        allowedExtensions: AUDIO_EXTENSIONS,
+      });
+      audioUrl = saved.url;
+      audioFileName = audio.name;
+    }
+  } catch (err) {
+    if (err instanceof UploadValidationError) {
+      return { error: err.message };
+    }
+    throw err;
   }
 
   const profile = await db.songwriterProfile.findUniqueOrThrow({
@@ -57,6 +92,10 @@ export async function createSubmissionAction(
       targetMode: targetMode as "SPECIFIC" | "ALL_ARTISTS",
       fileUrl,
       fileName,
+      imageUrl,
+      imageFileName,
+      audioUrl,
+      audioFileName,
     },
   });
 

@@ -10,23 +10,12 @@ export function SignupForm() {
     <form action={action} className="flex flex-col gap-4">
       <fieldset className="grid grid-cols-2 gap-3">
         <label className="flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-neutral-300 p-4 text-sm has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50">
-          <input
-            type="radio"
-            name="role"
-            value="SONGWRITER"
-            defaultChecked
-            className="sr-only"
-          />
+          <input type="radio" name="role" value="SONGWRITER" defaultChecked />
           <span className="font-semibold">Songwriter</span>
           <span className="text-xs text-neutral-500">I write lyrics</span>
         </label>
         <label className="flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-neutral-300 p-4 text-sm has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50">
-          <input
-            type="radio"
-            name="role"
-            value="ARTIST"
-            className="sr-only"
-          />
+          <input type="radio" name="role" value="ARTIST" />
           <span className="font-semibold">Artist</span>
           <span className="text-xs text-neutral-500">I perform songs</span>
         </label>

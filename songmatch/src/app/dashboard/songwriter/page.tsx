@@ -41,20 +41,34 @@ export default async function SongwriterDashboardPage() {
           {profile.submissions.map((s) => (
             <li
               key={s.id}
-              className="rounded-lg border border-neutral-200 p-4"
+              className="flex gap-4 rounded-lg border border-neutral-200 p-4"
             >
-              <div className="flex items-center justify-between">
-                <p className="font-semibold">{s.title}</p>
-                <span className="text-xs uppercase text-neutral-400">
-                  {s.targetMode === "ALL_ARTISTS"
-                    ? "Broadcast"
-                    : "Specific artists"}
-                </span>
-              </div>
-              <p className="mt-1 line-clamp-2 text-sm text-neutral-500">
-                {s.lyricsBody}
-              </p>
-              <div className="mt-2 flex gap-3 text-sm">
+              {s.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={s.imageUrl}
+                  alt=""
+                  className="h-16 w-16 shrink-0 rounded-md object-cover"
+                />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold">{s.title}</p>
+                  <span className="shrink-0 text-xs uppercase text-neutral-400">
+                    {s.targetMode === "ALL_ARTISTS"
+                      ? "Broadcast"
+                      : "Specific artists"}
+                  </span>
+                </div>
+                <p className="mt-1 line-clamp-2 text-sm text-neutral-500">
+                  {s.lyricsBody}
+                </p>
+                {s.audioUrl && (
+                  <p className="mt-1 text-xs text-neutral-400">
+                    🎵 {s.audioFileName}
+                  </p>
+                )}
+                <div className="mt-2 flex gap-3 text-sm">
                 {s.match ? (
                   <span className="font-semibold text-rose-600">
                     Matched!
@@ -71,6 +85,7 @@ export default async function SongwriterDashboardPage() {
                     Waiting for a match...
                   </span>
                 )}
+                </div>
               </div>
             </li>
           ))}

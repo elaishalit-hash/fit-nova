@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { getArtistDeck } from "@/lib/matching";
 import { ArtistSwipeDeck } from "@/components/ArtistSwipeDeck";
 
+export const dynamic = "force-dynamic";
+
 export default async function ArtistDashboardPage() {
   const session = await auth();
   if (session?.user.role !== "ARTIST") {

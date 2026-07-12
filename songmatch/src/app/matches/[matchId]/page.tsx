@@ -64,6 +64,24 @@ export default async function MatchDetailPage({
         </span>
       </div>
 
+      {match.submission.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={match.submission.imageUrl}
+          alt=""
+          className="h-56 w-full rounded-lg object-cover"
+        />
+      )}
+
+      {match.submission.audioUrl && (
+        <audio
+          controls
+          src={match.submission.audioUrl}
+          data-testid="match-detail-audio"
+          className="w-full"
+        />
+      )}
+
       <div className="rounded-lg border border-neutral-200 p-4">
         <p className="whitespace-pre-wrap font-mono text-sm text-neutral-700">
           {match.submission.lyricsBody}

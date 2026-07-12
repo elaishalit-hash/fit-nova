@@ -48,10 +48,33 @@ export function SubmissionForm() {
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        Attach a file (optional — PDF/TXT)
+        Attach a lyric sheet (optional — PDF/TXT)
         <input
           name="file"
           type="file"
+          accept=".pdf,.txt"
+          className="rounded-md border border-neutral-300 px-3 py-2"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm">
+        Cover picture (optional)
+        <input
+          name="image"
+          type="file"
+          accept="image/*"
+          data-testid="submission-image"
+          className="rounded-md border border-neutral-300 px-3 py-2"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm">
+        Your music (optional — a demo or recording of this song)
+        <input
+          name="audio"
+          type="file"
+          accept="audio/*"
+          data-testid="submission-audio"
           className="rounded-md border border-neutral-300 px-3 py-2"
         />
       </label>

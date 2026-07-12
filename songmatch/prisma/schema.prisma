@@ -73,6 +73,10 @@ model Submission {
   lyricsBody           String
   fileUrl              String?
   fileName             String?
+  imageUrl             String?
+  imageFileName        String?
+  audioUrl             String?
+  audioFileName        String?
   genreTags            String?
   targetMode           TargetMode
   createdAt            DateTime   @default(now())

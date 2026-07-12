@@ -1,7 +1,8 @@
 # SongMatch (MVP)
 
 A Tinder-style app connecting songwriters (lyrics/words) with artists. Songwriters
-upload a submission and target it at a specific artist or broadcast it to everyone.
+upload a submission — lyrics, plus an optional cover picture and a demo audio
+recording — and target it at a specific artist or broadcast it to everyone.
 Both sides swipe; a match triggers an in-app connection and messaging thread.
 
 On every match, the platform records a fixed copyright co-ownership percentage
@@ -54,8 +55,9 @@ seed message) between `songwriter2` and `artist1`.
 
 1. Sign up a new account (or log in as `songwriter1@songmatch.test`), accept
    the Terms.
-2. Create a submission, choose "Target specific artists," then swipe right
-   on an artist in the deck that follows.
+2. Create a submission — title, lyrics, and optionally a cover picture and
+   an audio file of your music — choose "Target specific artists," then
+   swipe right on an artist in the deck that follows.
 3. Log in as that artist (or sign up a new artist account) in another
    browser/incognito window, accept the Terms, and open **Discover**. The
    submission should appear — swipe right.

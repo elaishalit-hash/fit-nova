@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { readStoredFile } from "@/lib/storage";
+import { getMimeType, isInline, readStoredFile } from "@/lib/storage";
 
 export async function GET(
   _req: Request,
@@ -15,10 +15,11 @@ export async function GET(
 
   try {
     const buffer = await readStoredFile(id);
+    const disposition = isInline(id) ? "inline" : "attachment";
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
-        "Content-Type": "application/octet-stream",
-        "Content-Disposition": `attachment; filename="${id}"`,
+        "Content-Type": getMimeType(id),
+        "Content-Disposition": `${disposition}; filename="${id}"`,
       },
     });
   } catch {

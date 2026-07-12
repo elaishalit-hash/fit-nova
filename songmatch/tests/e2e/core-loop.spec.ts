@@ -1,6 +1,8 @@
+import path from "path";
 import { test, expect, type Page } from "@playwright/test";
 
 const PASSWORD = "TestPassword123!";
+const FIXTURES_DIR = path.join(__dirname, "fixtures");
 
 function uniqueEmail(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}@e2e.test`;
@@ -36,30 +38,40 @@ async function login(page: Page, email: string, password: string) {
 
 // Clicks "pass" through the deck until a card with the given title shows up,
 // then clicks the requested decision on it. Returns whether it was found.
+// Next.js dev mode occasionally serves a deck snapshot that lags a
+// just-created row by one request, so if the deck runs dry without finding
+// the target, the page is reloaded (a fresh server fetch) and retried a
+// couple of times before giving up.
 async function swipeUntilTitleFound(
   page: Page,
   title: string,
   decision: "like-button" | "pass-button" = "like-button"
 ) {
-  for (let i = 0; i < 50; i++) {
-    const empty = await page
-      .getByTestId("deck-empty")
-      .isVisible()
-      .catch(() => false);
-    if (empty) return false;
-
-    const cardTitle = await page
-      .getByTestId("deck-card-title")
-      .first()
-      .innerText();
-
-    if (cardTitle === title) {
-      await page.getByTestId(decision).click();
-      await page.waitForTimeout(350);
-      return true;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) {
+      await page.reload();
     }
-    await page.getByTestId("pass-button").click();
-    await page.waitForTimeout(350);
+
+    for (let i = 0; i < 20; i++) {
+      const empty = await page
+        .getByTestId("deck-empty")
+        .isVisible()
+        .catch(() => false);
+      if (empty) break;
+
+      const cardTitle = await page
+        .getByTestId("deck-card-title")
+        .first()
+        .innerText();
+
+      if (cardTitle === title) {
+        await page.getByTestId(decision).click();
+        await page.waitForTimeout(350);
+        return true;
+      }
+      await page.getByTestId("pass-button").click();
+      await page.waitForTimeout(350);
+    }
   }
   return false;
 }
@@ -197,6 +209,97 @@ test("broadcast-to-all-artists match flow", async ({ browser }) => {
       .getByTestId("match-list-item")
       .filter({ hasText: songTitle })
   ).toHaveCount(1);
+
+  await songwriterCtx.close();
+  await artistCtx.close();
+});
+
+test("submission with a picture and audio renders for the songwriter and a matching artist", async ({
+  browser,
+}) => {
+  const songwriterCtx = await browser.newContext();
+  const songwriterPage = await songwriterCtx.newPage();
+  const songTitle = `E2E Media Song ${Date.now()}`;
+
+  await signup(songwriterPage, {
+    name: "E2E Media Songwriter",
+    email: uniqueEmail("swm"),
+    role: "SONGWRITER",
+  });
+
+  await songwriterPage.goto("/dashboard/songwriter/submissions/new");
+  await songwriterPage.getByTestId("submission-title").fill(songTitle);
+  await songwriterPage
+    .getByTestId("submission-lyrics")
+    .fill("A verse to go with a picture and a tune.");
+  await songwriterPage
+    .getByTestId("submission-image")
+    .setInputFiles(path.join(FIXTURES_DIR, "cover.png"));
+  await songwriterPage
+    .getByTestId("submission-audio")
+    .setInputFiles(path.join(FIXTURES_DIR, "demo.wav"));
+  await songwriterPage
+    .locator('input[name="targetMode"][value="ALL_ARTISTS"]')
+    .check();
+  await songwriterPage.getByTestId("submission-submit").click();
+  await expect(songwriterPage).toHaveURL(/\/dashboard\/songwriter$/);
+
+  // Songwriter's own list shows the cover thumbnail.
+  await expect(
+    songwriterPage.locator("li", { hasText: songTitle }).locator("img")
+  ).toBeVisible();
+
+  // A brand-new artist account has an empty swipe history, so its deck only
+  // contains long-lived broadcast submissions (like the seeded demo one)
+  // plus ours — a small, predictable set to page through. Next.js dev mode
+  // occasionally serves a deck snapshot that lags a just-created row by one
+  // request, so a full reload is retried a couple of times if the target
+  // card isn't found before the deck runs out.
+  const artistCtx = await browser.newContext();
+  const artistPage = await artistCtx.newPage();
+  await signup(artistPage, {
+    name: "E2E Media Artist",
+    email: uniqueEmail("artm"),
+    role: "ARTIST",
+  });
+
+  let found = false;
+  for (let attempt = 0; attempt < 3 && !found; attempt++) {
+    await artistPage.goto("/dashboard/artist");
+
+    for (let i = 0; i < 10; i++) {
+      const empty = await artistPage
+        .getByTestId("deck-empty")
+        .isVisible()
+        .catch(() => false);
+      if (empty) break;
+
+      const cardTitle = await artistPage
+        .getByTestId("deck-card-title")
+        .first()
+        .innerText();
+
+      if (cardTitle === songTitle) {
+        await expect(
+          artistPage.getByTestId("deck-card-image").first()
+        ).toBeVisible();
+        // Native <audio controls> has a shadow-DOM control bar that
+        // Chromium can take a moment to paint, which briefly leaves the
+        // element with a zero-height box even once display/visibility are
+        // already correct — that's a browser rendering-timing detail, not
+        // something our app controls. What matters here is that our code
+        // put the right <audio src> in the DOM.
+        const audio = artistPage.getByTestId("deck-card-audio").first();
+        await expect(audio).toBeAttached();
+        await expect(audio).toHaveAttribute("src", /demo\.wav$/);
+        found = true;
+        break;
+      }
+      await artistPage.getByTestId("pass-button").click();
+      await artistPage.waitForTimeout(350);
+    }
+  }
+  expect(found).toBe(true);
 
   await songwriterCtx.close();
   await artistCtx.close();

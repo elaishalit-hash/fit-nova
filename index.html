@@ -286,14 +286,10 @@
         <p class="text-ink-400 text-sm mt-1">Fuel, tracked simply.</p>
       </div>
       <div class="flex items-center gap-2">
-        <button class="btn btn-scan relative font-semibold text-sm px-3.5 py-2.5 rounded-xl flex items-center gap-1.5" data-open-modal="scanModal">
+        <button class="btn btn-scan relative font-semibold text-sm px-4 py-2.5 rounded-xl flex items-center gap-1.5" data-open-modal="scanModal">
           <span class="pulse-dot absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-volt-400 ring-2 ring-ink-950"></span>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7V5a1 1 0 0 1 1-1h2"/><path d="M17 4h2a1 1 0 0 1 1 1v2"/><path d="M20 17v2a1 1 0 0 1-1 1h-2"/><path d="M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M7 8v8M10.5 8v8M13 8v8M16 8v8"/></svg>
-          <span class="hidden sm:inline">Add Food</span>
-        </button>
-        <button class="btn btn-primary font-semibold text-sm px-4 py-2.5 rounded-xl flex items-center gap-1.5" data-open-modal="mealModal">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          <span class="hidden sm:inline">Log Meal</span>
+          <span class="hidden sm:inline">Add Food</span>
         </button>
       </div>
     </div>
@@ -503,7 +499,6 @@
       <div class="p-5 space-y-4">
         <div class="flex items-center gap-1 bg-ink-800/60 border border-ink-800 rounded-full p-1 w-fit">
           <button type="button" class="scan-tab-btn nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold text-ink-300" data-scan-tab="search">Search</button>
-          <button type="button" class="scan-tab-btn nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold text-ink-300" data-scan-tab="barcode">Barcode</button>
           <button type="button" class="scan-tab-btn nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold text-ink-300" data-scan-tab="describe">Describe</button>
         </div>
 
@@ -515,20 +510,6 @@
           <div id="scanResults" class="space-y-1 max-h-64 overflow-y-auto"></div>
         </div>
 
-        <div data-scan-panel="barcode" class="space-y-3 hidden">
-          <form id="scanBarcodeForm" class="flex gap-2">
-            <input name="barcode" inputmode="numeric" class="field" placeholder="e.g. 0737628064502" autocomplete="off" />
-            <button type="submit" class="btn btn-primary px-4 rounded-xl text-sm font-semibold shrink-0">Go</button>
-          </form>
-          <button type="button" id="scanCameraBtn" class="btn btn-ghost w-full py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="13" height="10" rx="2"/><path d="M16 10.5 21 8v8l-5-2.5"/></svg>
-            Scan with camera
-          </button>
-          <video id="scanVideo" class="hidden w-full rounded-xl bg-black aspect-video object-cover" muted playsinline></video>
-          <p id="scanCameraNote" class="hidden text-[11px] text-ink-500">Camera scanning isn't supported in this browser — enter the barcode manually.</p>
-          <div id="scanBarcodeResult"></div>
-        </div>
-
         <div data-scan-panel="describe" class="space-y-3 hidden">
           <form id="scanDescribeForm" class="space-y-2">
             <label class="field-label">What did you eat?</label>
@@ -538,7 +519,7 @@
           <div id="describeResult" class="hidden space-y-3"></div>
         </div>
 
-        <p data-scan-disclaimer="search barcode" class="text-[11px] text-ink-500">Nutrition data from <span class="text-ink-400">Open Food Facts</span>, an open community database — coverage varies by product.</p>
+        <p data-scan-disclaimer="search" class="text-[11px] text-ink-500">Nutrition data from <span class="text-ink-400">Open Food Facts</span>, an open community database — coverage varies by product.</p>
         <p data-scan-disclaimer="describe" class="hidden text-[11px] text-ink-500">Estimates come from a small built-in food list and typical portion sizes — a rough guide, not precise nutrition data.</p>
 
         <div id="scanStatus" class="hidden text-center py-4 text-sm text-ink-400"></div>
@@ -878,7 +859,6 @@ function openModal(name) {
 }
 function escCloseHandler(e) { if (e.key === 'Escape') closeModal(); }
 function closeModal() {
-  stopCameraScanIfActive();
   document.getElementById('modalRoot').innerHTML = '';
   document.removeEventListener('keydown', escCloseHandler);
 }
@@ -1062,7 +1042,6 @@ function initSettingsModal(root) {
 
 /* ---- Scan Food modal ---- */
 let scanSelected = null;
-let scanStream = null;
 let pendingMealPrefill = null;
 
 function initScanModal(root) {
@@ -1079,25 +1058,11 @@ function initScanModal(root) {
     if (q) runScanSearch(root, q);
   });
 
-  root.querySelector('#scanBarcodeForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const code = (new FormData(e.target).get('barcode') || '').trim();
-    if (code) runBarcodeLookup(root, code);
-  });
-
   root.querySelector('#scanDescribeForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const text = (new FormData(e.target).get('text') || '').trim();
     if (text) renderDescribeResult(root, text, estimateMealFromText(text));
   });
-
-  const cameraBtn = root.querySelector('#scanCameraBtn');
-  if (!('BarcodeDetector' in window)) {
-    cameraBtn.classList.add('hidden');
-    root.querySelector('#scanCameraNote').classList.remove('hidden');
-  } else {
-    cameraBtn.addEventListener('click', () => startCameraScan(root));
-  }
 
   root.querySelector('input[name="grams"]').addEventListener('input', () => updatePortionPreview(root));
   root.querySelector('#scanAddBtn').addEventListener('click', () => confirmScanSelection());
@@ -1120,7 +1085,6 @@ function setScanTab(root, tab) {
   root.querySelector('#describeResult').classList.add('hidden');
   setScanStatus(root, '');
   scanSelected = null;
-  if (tab !== 'barcode') stopCameraScanIfActive();
 }
 
 function setScanStatus(root, text) {
@@ -1143,20 +1107,6 @@ async function runScanSearch(root, query) {
   }
 }
 
-async function runBarcodeLookup(root, code) {
-  setScanStatus(root, 'Looking up…');
-  root.querySelector('#scanBarcodeResult').innerHTML = '';
-  root.querySelector('#scanPortion').classList.add('hidden');
-  try {
-    const product = await offBarcode(code);
-    setScanStatus(root, '');
-    root.querySelector('#scanBarcodeResult').innerHTML = `<p class="text-xs text-ink-400">Found: <span class="text-ink-100 font-medium">${esc(product.name)}</span></p>`;
-    selectProduct(root, product);
-  } catch (err) {
-    setScanStatus(root, 'No product found for that barcode.');
-  }
-}
-
 async function offSearch(query) {
   const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=12`;
   const res = await fetch(url);
@@ -1166,17 +1116,6 @@ async function offSearch(query) {
     .map(normalizeOFFProduct)
     .filter(p => p && p.per100.calories > 0)
     .slice(0, 12);
-}
-
-async function offBarcode(code) {
-  const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('lookup failed');
-  const data = await res.json();
-  if (data.status !== 1 || !data.product) throw new Error('not found');
-  const product = normalizeOFFProduct(data.product);
-  if (!product) throw new Error('no nutrition data');
-  return product;
 }
 
 function normalizeOFFProduct(p) {
@@ -1266,37 +1205,6 @@ function confirmScanSelection() {
   };
   closeModal();
   openModal('mealModal');
-}
-
-async function startCameraScan(root) {
-  try {
-    const detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'] });
-    const video = root.querySelector('#scanVideo');
-    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    video.srcObject = scanStream;
-    video.classList.remove('hidden');
-    await video.play();
-    const tick = async () => {
-      if (!scanStream) return;
-      try {
-        const codes = await detector.detect(video);
-        if (codes.length) {
-          const code = codes[0].rawValue;
-          stopCameraScanIfActive();
-          root.querySelector('input[name="barcode"]').value = code;
-          runBarcodeLookup(root, code);
-          return;
-        }
-      } catch (err) { /* keep trying on transient detector errors */ }
-      requestAnimationFrame(tick);
-    };
-    tick();
-  } catch (err) {
-    toast('Could not access the camera. Enter the barcode manually.', 'danger');
-  }
-}
-function stopCameraScanIfActive() {
-  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
 }
 
 /* ============================================================
@@ -1406,9 +1314,22 @@ const FOOD_DB_SORTED = [...FOOD_DB].sort((a, b) =>
 const DESCRIBE_QTY_WORDS = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, couple: 2, few: 3 };
 const DESCRIBE_FILLER_WORDS = new Set(['of', 'bowl', 'bowls', 'cup', 'cups', 'slice', 'slices', 'piece', 'pieces', 'serving', 'servings', 'plate', 'plates', 'glass', 'glasses', 'can', 'cans', 'bottle', 'bottles', 'some', 'the', 'with', 'a', 'an']);
 
-function matchFood(text) {
+// Small "added to" amounts — e.g. the milk in a coffee is a splash, not a full glass.
+// Checked first for anything following "with"; falls back to a full FOOD_DB serving if unrecognized.
+const MODIFIER_DB = [
+  { names: ['milk'], label: 'a splash of milk', cal: 20, p: 1, c: 1.5, f: 1, fiber: 0, sugar: 1.5, sodium: 15 },
+  { names: ['cream', 'creamer', 'half and half'], label: 'a splash of cream', cal: 50, p: 0.5, c: 1, f: 5, fiber: 0, sugar: 1, sodium: 6 },
+  { names: ['sugar'], label: 'sugar', cal: 16, p: 0, c: 4, f: 0, fiber: 0, sugar: 4, sodium: 0 },
+  { names: ['honey'], label: 'honey', cal: 21, p: 0, c: 5.7, f: 0, fiber: 0, sugar: 5.7, sodium: 0 },
+  { names: ['sweetener', 'stevia', 'splenda', 'sugar substitute'], label: 'sweetener', cal: 0, p: 0, c: 0, f: 0, fiber: 0, sugar: 0, sodium: 0 }
+];
+const MODIFIER_DB_SORTED = [...MODIFIER_DB].sort((a, b) =>
+  Math.max(...b.names.map(n => n.length)) - Math.max(...a.names.map(n => n.length))
+);
+
+function matchInDb(text, db) {
   if (!text) return null;
-  for (const entry of FOOD_DB_SORTED) {
+  for (const entry of db) {
     for (const name of entry.names) {
       const re = new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
       if (re.test(text)) return entry;
@@ -1416,27 +1337,66 @@ function matchFood(text) {
   }
   return null;
 }
+function matchFood(text) { return matchInDb(text, FOOD_DB_SORTED); }
+function matchModifier(text) { return matchInDb(text, MODIFIER_DB_SORTED); }
+
+function parseQtyAndRest(segText) {
+  const words = segText.toLowerCase().split(/\s+/).filter(Boolean);
+  let qty = 1, startIdx = 0;
+  if (words.length && /^\d+(\.\d+)?$/.test(words[0])) { qty = parseFloat(words[0]); startIdx = 1; }
+  else if (words.length && DESCRIBE_QTY_WORDS[words[0]] != null) { qty = DESCRIBE_QTY_WORDS[words[0]]; startIdx = 1; }
+  const rest = words.slice(startIdx).filter(w => !DESCRIBE_FILLER_WORDS.has(w)).join(' ');
+  return { qty, rest: rest || words.join(' ') };
+}
+function buildMealItem(entry, qty, catOverride) {
+  return {
+    name: entry.label, qty,
+    cal: entry.cal * qty, protein: entry.p * qty, carbs: entry.c * qty, fat: entry.f * qty,
+    fiber: (entry.fiber || 0) * qty, sugar: (entry.sugar || 0) * qty, sodium: (entry.sodium || 0) * qty,
+    cat: catOverride || entry.cat
+  };
+}
+
+// A bare base segment ("chicken", "sugar") is almost always the main food, so check
+// the full food list first. A "with X" segment is usually an addition, so check the
+// small-modifier list first — falling back the other way if nothing matches either.
+function resolveBaseSegment(rest) {
+  const foodMatch = matchFood(rest);
+  if (foodMatch) return { entry: foodMatch, cat: foodMatch.cat };
+  const modMatch = matchModifier(rest);
+  if (modMatch) return { entry: modMatch, cat: 'moderate' };
+  return null;
+}
+function resolveExtraSegment(rest) {
+  const modMatch = matchModifier(rest);
+  if (modMatch) return { entry: modMatch, cat: 'moderate' };
+  const foodMatch = matchFood(rest);
+  if (foodMatch) return { entry: foodMatch, cat: foodMatch.cat };
+  return null;
+}
 
 function estimateMealFromText(text) {
-  const segments = text.split(/,|&|\+|\n|\b(?:and|with|plus)\b/i).map(s => s.trim()).filter(Boolean);
+  const topSegments = text.split(/,|&|\+|\n|\b(?:and|plus)\b/i).map(s => s.trim()).filter(Boolean);
   const items = [];
   const unmatched = [];
-  segments.forEach(seg => {
-    const words = seg.toLowerCase().split(/\s+/).filter(Boolean);
-    let qty = 1, startIdx = 0;
-    if (words.length && /^\d+(\.\d+)?$/.test(words[0])) { qty = parseFloat(words[0]); startIdx = 1; }
-    else if (words.length && DESCRIBE_QTY_WORDS[words[0]] != null) { qty = DESCRIBE_QTY_WORDS[words[0]]; startIdx = 1; }
-    const rest = words.slice(startIdx).filter(w => !DESCRIBE_FILLER_WORDS.has(w)).join(' ');
-    const match = matchFood(rest || seg.toLowerCase());
-    if (match) {
-      items.push({
-        name: match.label, qty, cal: match.cal * qty, protein: match.p * qty, carbs: match.c * qty, fat: match.f * qty,
-        fiber: (match.fiber || 0) * qty, sugar: (match.sugar || 0) * qty, sodium: (match.sodium || 0) * qty, cat: match.cat
-      });
-    } else if (rest) {
-      unmatched.push(seg);
-    }
+
+  topSegments.forEach(topSeg => {
+    const [baseText, ...extraTexts] = topSeg.split(/\bwith\b/i).map(s => s.trim()).filter(Boolean);
+    if (!baseText) return;
+
+    const { qty: baseQty, rest: baseRest } = parseQtyAndRest(baseText);
+    const baseResolved = resolveBaseSegment(baseRest);
+    if (baseResolved) items.push(buildMealItem(baseResolved.entry, baseQty, baseResolved.cat));
+    else unmatched.push(baseText);
+
+    extraTexts.forEach(extraText => {
+      const { qty: extraQty, rest: extraRest } = parseQtyAndRest(extraText);
+      const extraResolved = resolveExtraSegment(extraRest);
+      if (extraResolved) items.push(buildMealItem(extraResolved.entry, extraQty, extraResolved.cat));
+      else unmatched.push(extraText);
+    });
   });
+
   const totals = items.reduce((acc, i) => ({
     cal: acc.cal + i.cal, protein: acc.protein + i.protein, carbs: acc.carbs + i.carbs, fat: acc.fat + i.fat,
     fiber: acc.fiber + i.fiber, sugar: acc.sugar + i.sugar, sodium: acc.sodium + i.sodium
@@ -1448,6 +1408,9 @@ function estimateMealFromText(text) {
   return { items, unmatched, totals, score };
 }
 
+/* ============================================================
+   HEALTH SCORING (used for Search results from Open Food Facts)
+   ============================================================ */
 function healthTier(score) {
   if (score == null) return { label: 'Not enough to judge', text: 'text-ink-300', bg: 'bg-ink-800/60', tip: "Didn't recognize enough foods to score this." };
   if (score >= 80) return { label: 'Whole & nutritious', text: 'text-volt-400', bg: 'bg-volt-400/10', tip: 'Great choice — mostly whole foods.' };

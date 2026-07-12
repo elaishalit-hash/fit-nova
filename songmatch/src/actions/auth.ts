@@ -1,0 +1,86 @@
+"use server";
+
+import bcrypt from "bcryptjs";
+import { AuthError } from "next-auth";
+import { db } from "@/lib/db";
+import { signIn } from "@/lib/auth";
+
+export type FormState = { error?: string };
+
+export async function signupAction(
+  _prevState: FormState | undefined,
+  formData: FormData
+): Promise<FormState> {
+  const name = String(formData.get("name") ?? "").trim();
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  const role = String(formData.get("role") ?? "");
+
+  if (!name || !email || !password) {
+    return { error: "All fields are required." };
+  }
+  if (role !== "SONGWRITER" && role !== "ARTIST") {
+    return { error: "Choose whether you're a songwriter or an artist." };
+  }
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+
+  const existing = await db.user.findUnique({ where: { email } });
+  if (existing) {
+    return { error: "An account with that email already exists." };
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  await db.user.create({
+    data: {
+      name,
+      email,
+      passwordHash,
+      role,
+      ...(role === "SONGWRITER"
+        ? { songwriterProfile: { create: { displayName: name } } }
+        : { artistProfile: { create: { displayName: name } } }),
+    },
+  });
+
+  await signIn("credentials", {
+    email,
+    password,
+    redirectTo: "/terms/accept",
+  });
+
+  return {};
+}
+
+export async function loginAction(
+  _prevState: FormState | undefined,
+  formData: FormData
+): Promise<FormState> {
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  const password = String(formData.get("password") ?? "");
+
+  if (!email || !password) {
+    return { error: "Email and password are required." };
+  }
+
+  try {
+    await signIn("credentials", {
+      email,
+      password,
+      redirectTo: "/dashboard",
+    });
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { error: "Invalid email or password." };
+    }
+    throw err;
+  }
+
+  return {};
+}

@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Role {
+  SONGWRITER
+  ARTIST
+}
+
+enum TargetMode {
+  SPECIFIC
+  ALL_ARTISTS
+}
+
+enum SwipeDecision {
+  LIKE
+  PASS
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  songwriterProfile SongwriterProfile?
+  artistProfile     ArtistProfile?
+  termsAcceptances  TermsAcceptance[]
+  messages          Message[]
+}
+
+model SongwriterProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  displayName String
+  bio         String?
+  avatarUrl   String?
+  createdAt   DateTime @default(now())
+
+  submissions Submission[]
+  matches     Match[]
+}
+
+model ArtistProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  displayName String
+  bio         String?
+  avatarUrl   String?
+  genreTags   String?
+  createdAt   DateTime @default(now())
+
+  submissionTargets SubmissionTarget[]
+  artistSwipes      ArtistSwipe[]
+  matches           Match[]
+}
+
+model Submission {
+  id                   String     @id @default(cuid())
+  songwriterProfileId  String
+  songwriter           SongwriterProfile @relation(fields: [songwriterProfileId], references: [id])
+  title                String
+  lyricsBody           String
+  fileUrl              String?
+  fileName             String?
+  genreTags            String?
+  targetMode           TargetMode
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  submissionTargets SubmissionTarget[]
+  artistSwipes      ArtistSwipe[]
+  match             Match?
+}
+
+// Songwriter-side deck: songwriter swipes through artist profiles for one SPECIFIC-mode submission.
+model SubmissionTarget {
+  id              String        @id @default(cuid())
+  submissionId    String
+  submission      Submission    @relation(fields: [submissionId], references: [id])
+  artistProfileId String
+  artistProfile   ArtistProfile @relation(fields: [artistProfileId], references: [id])
+  decision        SwipeDecision
+  createdAt       DateTime      @default(now())
+
+  @@unique([submissionId, artistProfileId])
+}
+
+// Artist-side deck: artist swipes through submissions eligible for them.
+model ArtistSwipe {
+  id              String        @id @default(cuid())
+  artistProfileId String
+  artistProfile   ArtistProfile @relation(fields: [artistProfileId], references: [id])
+  submissionId    String
+  submission      Submission    @relation(fields: [submissionId], references: [id])
+  decision        SwipeDecision
+  createdAt       DateTime      @default(now())
+
+  @@unique([artistProfileId, submissionId])
+}
+
+model Match {
+  id                    String   @id @default(cuid())
+  submissionId          String   @unique
+  submission            Submission        @relation(fields: [submissionId], references: [id])
+  songwriterProfileId   String
+  songwriter            SongwriterProfile @relation(fields: [songwriterProfileId], references: [id])
+  artistProfileId       String
+  artist                ArtistProfile     @relation(fields: [artistProfileId], references: [id])
+  copyrightSharePercent Float
+  termsVersionId        String
+  termsVersion          TermsVersion      @relation(fields: [termsVersionId], references: [id])
+  createdAt             DateTime          @default(now())
+
+  messages Message[]
+}
+
+model TermsVersion {
+  id           String   @id @default(cuid())
+  versionLabel String   @unique
+  bodyMarkdown String
+  effectiveAt  DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  acceptances TermsAcceptance[]
+  matches     Match[]
+}
+
+model TermsAcceptance {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  termsVersionId String
+  termsVersion   TermsVersion @relation(fields: [termsVersionId], references: [id])
+  acceptedAt     DateTime @default(now())
+
+  @@unique([userId, termsVersionId])
+}
+
+model Message {
+  id           String   @id @default(cuid())
+  matchId      String
+  match        Match    @relation(fields: [matchId], references: [id])
+  senderUserId String
+  sender       User     @relation(fields: [senderUserId], references: [id])
+  body         String
+  createdAt    DateTime @default(now())
+}

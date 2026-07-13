@@ -4,8 +4,11 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import type { Role } from "@/generated/prisma/client";
 
+const THIRTY_DAYS = 30 * 24 * 60 * 60;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: THIRTY_DAYS, updateAge: 24 * 60 * 60 },
+  jwt: { maxAge: THIRTY_DAYS },
   trustHost: true,
   pages: {
     signIn: "/login",

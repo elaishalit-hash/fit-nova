@@ -1,5 +1,7 @@
 # SongMatch (MVP)
 
+**Live:** https://songmatch-production-6c95.up.railway.app (Railway, seeded with the demo accounts below)
+
 A Tinder-style app connecting songwriters (lyrics/words) with artists. Songwriters
 upload a submission — lyrics, plus an optional cover picture and a demo audio
 recording — and target it at a specific artist or broadcast it to everyone.
@@ -74,6 +76,35 @@ npx playwright install chromium   # first time only
 npm run dev                        # in one terminal
 npx playwright test                # in another
 ```
+
+## Deployment
+
+Deployed on Railway (persistent volume — needed since this app uses a local
+SQLite file and local-disk file uploads, neither of which survive on
+serverless/ephemeral-disk hosts like Vercel as-is). To redeploy or stand up a
+new instance:
+
+```bash
+railway login
+railway link                     # or `railway init` for a new project
+railway volume add --mount-path /data   # first time only
+railway variable set "DATABASE_URL=file:/data/dev.db"
+railway variable set "UPLOADS_DIR=/data/uploads"
+railway variable set "AUTH_TRUST_HOST=true"
+railway variable set "AUTH_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")"
+railway up
+railway domain                   # generates the public *.up.railway.app URL
+```
+
+On Windows Git Bash, prefix any command whose value contains a leading `/`
+(e.g. `--mount-path /data`, `DATABASE_URL=file:/data/...`) with
+`MSYS_NO_PATHCONV=1` — otherwise Git Bash silently rewrites `/data` into a
+Windows path like `C:/Program Files/Git/data`.
+
+`npm start` runs `prisma migrate deploy` then re-seeds (idempotent, safe to
+run on every restart) before starting the server — no separate release step
+needed. **The seed accounts (`password123` for all of them) exist on the live
+URL too** — anyone who knows that from this README can sign in as them.
 
 ## Explicitly out of scope for this MVP
 

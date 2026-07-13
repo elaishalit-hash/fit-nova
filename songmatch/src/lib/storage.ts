@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 
-const UPLOAD_DIR = path.join(process.cwd(), "uploads");
+const UPLOAD_DIR = process.env.UPLOADS_DIR ?? path.join(process.cwd(), "uploads");
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25MB
 

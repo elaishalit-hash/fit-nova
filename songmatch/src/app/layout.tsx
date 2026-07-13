@@ -20,6 +20,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://songmatch-production-6c95.up.railway.app"),
   title: "SongMatch",
   description: "Where lyrics find their voice.",
 };

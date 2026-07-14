@@ -33,8 +33,8 @@ export async function createSubmissionAction(
   const image = formData.get("image");
   const audio = formData.get("audio");
 
-  if (!title || !lyricsBody) {
-    return { error: "Title and lyrics are required." };
+  if (!title) {
+    return { error: "Title is required." };
   }
   if (targetMode !== "SPECIFIC" && targetMode !== "ALL_ARTISTS") {
     return { error: "Choose a targeting mode." };

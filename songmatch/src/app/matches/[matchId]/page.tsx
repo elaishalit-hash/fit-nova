@@ -90,9 +90,15 @@ export default async function MatchDetailPage({
       )}
 
       <div className="card-surface rounded-2xl p-4">
-        <p className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-ink-700">
-          {match.submission.lyricsBody}
-        </p>
+        {match.submission.lyricsBody ? (
+          <p className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-ink-700">
+            {match.submission.lyricsBody}
+          </p>
+        ) : (
+          <p className="text-sm italic text-ink-400">
+            No lyrics provided — see attached music/file.
+          </p>
+        )}
       </div>
 
       <div>

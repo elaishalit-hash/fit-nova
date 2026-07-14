@@ -27,10 +27,9 @@ export function SubmissionForm() {
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="field-label">Lyrics</span>
+        <span className="field-label">Lyrics (optional)</span>
         <textarea
           name="lyricsBody"
-          required
           rows={8}
           data-testid="submission-lyrics"
           className="field font-mono"

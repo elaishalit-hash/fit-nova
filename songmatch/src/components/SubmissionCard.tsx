@@ -48,9 +48,15 @@ export function SubmissionCard({
           className="w-full"
         />
       )}
-      <p className="whitespace-pre-wrap rounded-lg bg-ink-50 p-3 font-mono text-sm leading-relaxed text-ink-700">
-        {submission.lyricsBody}
-      </p>
+      {submission.lyricsBody ? (
+        <p className="whitespace-pre-wrap rounded-lg bg-ink-50 p-3 font-mono text-sm leading-relaxed text-ink-700">
+          {submission.lyricsBody}
+        </p>
+      ) : (
+        <p className="rounded-lg bg-ink-50 p-3 text-sm italic text-ink-400">
+          No lyrics provided — see attached music/file.
+        </p>
+      )}
     </div>
   );
 }

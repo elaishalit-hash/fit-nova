@@ -77,8 +77,12 @@ export default async function SongwriterDashboardPage() {
                       : "Specific artists"}
                   </span>
                 </div>
-                <p className="mt-1 line-clamp-2 text-sm text-ink-500">
-                  {s.lyricsBody}
+                <p
+                  className={`mt-1 line-clamp-2 text-sm ${
+                    s.lyricsBody ? "text-ink-500" : "italic text-ink-400"
+                  }`}
+                >
+                  {s.lyricsBody || "No lyrics provided"}
                 </p>
                 {s.audioUrl && (
                   <p className="mt-1 text-xs text-ink-400">

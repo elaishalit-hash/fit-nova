@@ -10,20 +10,16 @@ safely touch widgets directly.
 from __future__ import annotations
 
 import logging
-import webbrowser
 from datetime import datetime
 from typing import Callable
-from urllib.parse import quote
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QApplication,
     QComboBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
     QMainWindow,
-    QMessageBox,
     QPushButton,
     QRadioButton,
     QTableWidget,
@@ -40,8 +36,6 @@ from core.simconnect_client import RadioState
 logger = logging.getLogger(__name__)
 
 _LOG_COLUMNS = ["Time", "Verb", "Station", "Frequency", "Confidence", "Action"]
-
-PROJECT_URL = "https://github.com/elaishalit-hash/fit-nova/tree/atc-autotune/atc-autotune"
 
 
 class MainWindow(QMainWindow):
@@ -83,14 +77,10 @@ class MainWindow(QMainWindow):
         for w in (self.com1_label, self.com2_label):
             w.setStyleSheet("font-size: 16px; font-weight: 600;")
         self.conn_label.setStyleSheet("font-size: 16px; font-weight: 600; color: crimson;")
-        self.share_btn = QPushButton("Share App")
-        self.share_btn.setToolTip("Open your email client with the project link pre-filled")
-        self.share_btn.clicked.connect(self._share_clicked)
         freq_row.addWidget(self.com1_label)
         freq_row.addWidget(self.com2_label)
         freq_row.addStretch()
         freq_row.addWidget(self.conn_label)
-        freq_row.addWidget(self.share_btn)
         layout.addLayout(freq_row)
 
         mode_row = QHBoxLayout()
@@ -136,39 +126,6 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.log_table)
 
         self.setCentralWidget(central)
-
-    def _share_clicked(self) -> None:
-        # Always copy the link, regardless of whether a mailto: handler is
-        # even configured on this machine - webbrowser.open() reports success
-        # even when there's no default mail app to actually open, so the
-        # clipboard copy is the only part of this that's guaranteed to work.
-        QApplication.clipboard().setText(PROJECT_URL)
-
-        subject = quote("ATC Auto-Tuner for MSFS + VATSIM")
-        body = quote(
-            "Check out this ATC auto-tuner for Microsoft Flight Simulator + VATSIM:\n\n"
-            f"{PROJECT_URL}\n"
-        )
-        mailto_url = f"mailto:?subject={subject}&body={body}"
-        opened = False
-        try:
-            opened = webbrowser.open(mailto_url)
-        except Exception:
-            logger.exception("Failed to open email client for sharing")
-
-        if opened:
-            message = (
-                "Your email client should be opening with the link pre-filled.\n\n"
-                "The link is also copied to your clipboard (Ctrl+V) in case you'd "
-                "rather paste it somewhere else."
-            )
-        else:
-            message = (
-                "Couldn't open an email client on this machine.\n\n"
-                "The link is copied to your clipboard instead - paste it (Ctrl+V) "
-                "into an email, WhatsApp, or wherever you want to send it."
-            )
-        QMessageBox.information(self, "Share App", message)
 
     # --- mode/target callbacks ---------------------------------------------
 

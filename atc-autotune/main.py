@@ -1,24 +1,23 @@
 """Entrypoint: wires SimConnect, audio capture, transcription, parsing,
 logging and the GUI together.
 
-Whisper model loading and audio capture start on a background thread so the
-window appears and stays responsive immediately, even while the model is
-still loading (first run can take a while if weights need to download).
+IMPORTANT: Transcriber() must be constructed before QApplication. Loading
+the Whisper model (ctranslate2's native init) after Qt has initialized
+reliably crashes the process with STATUS_ACCESS_VIOLATION (0xC0000005) - a
+real native-level conflict between ctranslate2 and PySide6, confirmed by
+isolating both orderings; it happens even fully synchronously on the main
+thread, so it is not a threading race, purely an init-order requirement.
+Hence PySide6/gui/audio_capture/simconnect_client are only imported inside
+main(), after the model has already loaded.
 """
 
 import logging
 import sys
-import threading
-
-from PySide6.QtWidgets import QApplication
 
 from config import APP
 from core.atc_parser import ATCInstruction, parse
-from core.audio_capture import AudioSegmenter
 from core.logger import ATCLogger
-from core.simconnect_client import SimConnectClient
 from core.transcription import Transcriber
-from gui.main_window import MainWindow
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,6 +37,19 @@ class AppState:
 
 
 def main() -> int:
+    logger.info("Loading Whisper model (first run may take a while to download weights)...")
+    try:
+        transcriber = Transcriber()
+    except Exception:
+        logger.exception("Failed to load Whisper model - audio capture will not start")
+        transcriber = None
+
+    from PySide6.QtWidgets import QApplication
+
+    from core.audio_capture import AudioSegmenter
+    from core.simconnect_client import SimConnectClient
+    from gui.main_window import MainWindow
+
     app = QApplication(sys.argv)
     state = AppState()
     db_logger = ATCLogger(APP.db_path)
@@ -52,7 +64,7 @@ def main() -> int:
 
     # `window` doesn't exist yet when sim_client is constructed, so route
     # through a late-bound wrapper rather than a forward reference.
-    window: MainWindow | None = None
+    window: "MainWindow | None" = None
 
     def forward_radio_state(radio_state) -> None:
         if window is not None:
@@ -94,9 +106,6 @@ def main() -> int:
         on_reject=handle_reject,
     )
 
-    transcriber: Transcriber | None = None
-    segmenter_holder: dict[str, AudioSegmenter | None] = {"segmenter": None}
-
     def handle_segment(audio, sample_rate) -> None:
         # Runs on the audio-capture thread.
         assert transcriber is not None
@@ -128,26 +137,19 @@ def main() -> int:
         if state.mode == "auto":
             apply_frequency(state.target_radio, instruction, transmission_id, "auto")
 
-    def start_pipeline() -> None:
-        nonlocal transcriber
-        logger.info("Loading Whisper model (first run may take a while to download weights)...")
-        try:
-            transcriber = Transcriber()
-        except Exception:
-            logger.exception("Failed to load Whisper model - audio pipeline will not start")
-            return
+    sim_client.start()
+
+    segmenter = None
+    if transcriber is not None:
         segmenter = AudioSegmenter(on_segment=handle_segment)
         segmenter.start()
-        segmenter_holder["segmenter"] = segmenter
         logger.info("Listening for ATC audio.")
-
-    sim_client.start()
-    threading.Thread(target=start_pipeline, daemon=True).start()
+    else:
+        logger.warning("Audio capture not started because the Whisper model failed to load.")
 
     window.show()
     exit_code = app.exec()
 
-    segmenter = segmenter_holder["segmenter"]
     if segmenter is not None:
         segmenter.stop()
     sim_client.stop()

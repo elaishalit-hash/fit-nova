@@ -41,12 +41,18 @@ then everything runs fully offline/local.
 .venv\Scripts\python main.py
 ```
 
-The window appears immediately; "Loading Whisper model..." happens in the
-background (see console / `atc_autotune.log`). Once loaded, the app starts
-listening on your default audio output device (loopback capture - it hears
-whatever your speakers/headset would play, so anything else making noise
-through that device, e.g. sim sounds or music, becomes background noise
-picked up by the segmenter).
+The Whisper model loads first (a couple of seconds once cached, longer on
+the very first run while weights download - see console / `atc_autotune.log`
+for progress), *then* the window appears. This order is required: loading
+the model after Qt has initialized reliably crashes the process with a
+native access violation (a real PySide6/ctranslate2 init-order conflict, not
+a Python exception you can catch) - don't reorder `main.py` to load it
+lazily/in the background without re-testing that.
+
+Once the window is up, the app is listening on your default audio output
+device (loopback capture - it hears whatever your speakers/headset would
+play, so anything else making noise through that device, e.g. sim sounds or
+music, becomes background noise picked up by the segmenter).
 
 **For cleaner recognition**, consider routing vPilot's audio output alone to
 a virtual audio device (e.g. [VB-Cable](https://vb-audio.com/Cable/)) and

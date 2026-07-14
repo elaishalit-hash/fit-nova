@@ -4,3 +4,6 @@ __pycache__/
 .pytest_cache/
 atc_log.sqlite3
 atc_autotune.log
+build/
+dist/
+*.spec

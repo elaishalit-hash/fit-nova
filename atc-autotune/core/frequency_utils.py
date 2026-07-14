@@ -29,10 +29,13 @@ _DECIMAL_WORDS = {"point", "decimal"}
 
 _NUMERAL_FREQ_RE = re.compile(r"\b1[1-3]\d\.\d{1,3}\b")
 _WORDED_FREQ_RE = re.compile(r"\A1[1-3]\d\.\d{1,3}\Z")
-# Words/letters OR a punctuation mark - punctuation forces a break so that
-# e.g. "..., one two one decimal eight" doesn't fuse with digits that
-# preceded the comma from an unrelated number.
-_TOKEN_RE = re.compile(r"[a-zA-Z']+|[,.;:!?]")
+# Words/letters, a bare digit run, OR a punctuation mark - punctuation
+# forces a break so that e.g. "..., one two one decimal eight" doesn't fuse
+# with digits that preceded the comma from an unrelated number. Bare digit
+# runs matter because Whisper sometimes emits *mixed* forms like
+# "121 decimal 8" (numerals either side of a spoken decimal word) rather
+# than purely numeral or purely worded output.
+_TOKEN_RE = re.compile(r"[a-zA-Z']+|\d+|[,.;:!?]")
 
 
 def is_valid_com_frequency(freq_mhz: float) -> bool:
@@ -59,6 +62,8 @@ def _extract_worded_candidates(text: str) -> list[str]:
     for w in raw_tokens:
         if w in ",.;:!?":
             tokens.append(None)
+        elif w.isdigit():
+            tokens.append(w)
         elif w in _NUMBER_WORD_TO_DIGIT:
             tokens.append(_NUMBER_WORD_TO_DIGIT[w])
         elif w in _DECIMAL_WORDS:

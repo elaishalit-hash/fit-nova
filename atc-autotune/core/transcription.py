@@ -1,4 +1,8 @@
-"""faster-whisper wrapper: turns a captured audio segment into text."""
+"""faster-whisper wrapper: turns a captured audio segment into text.
+
+Runs inside transcription_worker.py, in a separate OS process from the Qt
+GUI - see that module's docstring for why that separation is required.
+"""
 
 import logging
 

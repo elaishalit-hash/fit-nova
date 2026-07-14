@@ -50,6 +50,18 @@ def test_extract_worded_frequency_with_niner():
     assert results == [(119.8, "worded")]
 
 
+def test_extract_mixed_numeral_and_worded_frequency():
+    # Real Whisper output observed in testing: numerals either side of a
+    # spoken decimal word, rather than a pure "118.3" or fully spelled-out form.
+    results = extract_frequencies("monitor Ground, 121 decimal 8.")
+    assert results == [(121.8, "worded")]
+
+
+def test_mixed_form_does_not_fuse_unrelated_callsign_digits():
+    results = extract_frequencies("Delta123 contact Tower one one eight decimal three")
+    assert results == [(118.3, "worded")]
+
+
 def test_no_frequency_present():
     assert extract_frequencies("roger, standby") == []
 

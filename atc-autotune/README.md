@@ -8,7 +8,7 @@ automatically or after your confirmation.
 ## How it works
 
 ```
-System audio (loopback) --> VAD segmenter --> faster-whisper (local STT)
+System audio (loopback) --> VAD segmenter --> transcription_worker.exe (per segment)
         --> ATC phrase parser --> [Auto: tune immediately]
                                  [Manual: show Confirm/Reject banner]
         --> SQLite log (all transmissions + frequency changes) + GUI log table
@@ -16,6 +16,22 @@ System audio (loopback) --> VAD segmenter --> faster-whisper (local STT)
 
 SimConnect is polled continuously to show COM1/COM2's current active
 frequency and to reconnect automatically if MSFS restarts.
+
+**Why transcription runs in a separate process:** PySide6 (Qt) and
+ctranslate2 (faster-whisper's backend) cannot coexist in the same OS process
+in a packaged build - ctranslate2 bundles its own Intel OpenMP runtime
+(`libiomp5md.dll`), and if Qt has already initialized when ctranslate2 loads
+a model, the process crashes with `STATUS_ACCESS_VIOLATION` (0xC0000005).
+This is a native-level conflict, not a Python exception, so it can't be
+caught - confirmed by isolating both orderings and by testing every standard
+OpenMP-conflict environment variable (`KMP_DUPLICATE_LIB_OK`, `KMP_AFFINITY`,
+`OMP_NUM_THREADS`), none of which helped. `main.py`/`gui/` never import
+`faster_whisper`/`ctranslate2` - only `core/transcription_worker.py` does,
+and it always runs as its own subprocess (`core/transcription_client.py`
+launches it once per audio segment). Don't "simplify" this back into an
+in-process call without re-testing the packaged build specifically - it
+works fine unfrozen (`python main.py`) and only breaks once packaged,
+which is easy to miss.
 
 ## Requirements
 
@@ -41,13 +57,11 @@ then everything runs fully offline/local.
 .venv\Scripts\python main.py
 ```
 
-The Whisper model loads first (a couple of seconds once cached, longer on
-the very first run while weights download - see console / `atc_autotune.log`
-for progress), *then* the window appears. This order is required: loading
-the model after Qt has initialized reliably crashes the process with a
-native access violation (a real PySide6/ctranslate2 init-order conflict, not
-a Python exception you can catch) - don't reorder `main.py` to load it
-lazily/in the background without re-testing that.
+The window appears immediately. Each detected speech segment is sent to a
+one-shot transcription subprocess (see "How it works" above), which costs
+~1-2s per transmission once the model is cached locally - a worthwhile
+trade-off for a crash-proof packaged build. First run downloads the model
+weights, adding a one-time delay to the *first* transcription only.
 
 Once the window is up, the app is listening on your default audio output
 device (loopback capture - it hears whatever your speakers/headset would
@@ -99,8 +113,22 @@ All tunables live in `config.py`:
   installed in your venv.
 - Frequency is always set as the **active** frequency directly (no
   standby+swap realism) - both Auto and Manual-confirm apply immediately.
-- No packaging yet (`python main.py` only) - PyInstaller packaging into a
-  standalone `.exe` would be a natural next step.
+
+## Packaging a standalone build (no Python required to run it)
+
+```powershell
+.venv\Scripts\pip install pyinstaller
+.venv\Scripts\pyinstaller --name TranscribeWorker --console --noconfirm --paths . core\transcription_worker.py
+.venv\Scripts\pyinstaller --name ATC-Autotune --windowed --noconfirm main.py
+# Nest the worker build inside the main app's dist folder - transcription_client.py
+# looks for it at <exe dir>\TranscribeWorker\TranscribeWorker.exe when frozen.
+Copy-Item -Recurse dist\TranscribeWorker dist\ATC-Autotune\TranscribeWorker
+```
+
+The result (`dist\ATC-Autotune\`, ~400MB) is fully standalone - zip it up and
+anyone on Windows can run `ATC-Autotune.exe` with no Python install. Two
+separate PyInstaller builds are required (see "Why transcription runs in a
+separate process" above) - a single combined build reintroduces the crash.
 
 ## Tests
 

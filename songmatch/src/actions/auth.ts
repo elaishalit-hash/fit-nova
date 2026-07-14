@@ -4,13 +4,22 @@ import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
 import { db } from "@/lib/db";
 import { signIn } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export type FormState = { error?: string };
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const NAME_MAX = 100;
 
 export async function signupAction(
   _prevState: FormState | undefined,
   formData: FormData
 ): Promise<FormState> {
+  const ip = await getClientIp();
+  if (!checkRateLimit(`signup:${ip}`, { windowMs: 15 * 60 * 1000, max: 10 })) {
+    return { error: "Too many signup attempts. Please try again in a few minutes." };
+  }
+
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "")
     .trim()
@@ -20,6 +29,12 @@ export async function signupAction(
 
   if (!name || !email || !password) {
     return { error: "All fields are required." };
+  }
+  if (name.length > NAME_MAX) {
+    return { error: `Name must be ${NAME_MAX} characters or fewer.` };
+  }
+  if (!EMAIL_RE.test(email)) {
+    return { error: "Enter a valid email address." };
   }
   if (role !== "SONGWRITER" && role !== "ARTIST") {
     return { error: "Choose whether you're a songwriter or an artist." };
@@ -67,6 +82,16 @@ export async function loginAction(
 
   if (!email || !password) {
     return { error: "Email and password are required." };
+  }
+
+  const ip = await getClientIp();
+  const ipOk = checkRateLimit(`login-ip:${ip}`, { windowMs: 15 * 60 * 1000, max: 20 });
+  const emailOk = checkRateLimit(`login-email:${email}`, {
+    windowMs: 15 * 60 * 1000,
+    max: 6,
+  });
+  if (!ipOk || !emailOk) {
+    return { error: "Too many login attempts. Please try again in a few minutes." };
   }
 
   try {

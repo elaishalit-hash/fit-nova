@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import { getCurrentTermsVersion } from "@/lib/terms";
 import { TermsBody } from "@/components/TermsBody";
+
+export const revalidate = 3600;
+
+export const metadata: Metadata = {
+  title: "Terms & Conditions",
+  description: "SongMatch's Terms & Conditions, including the copyright co-ownership clause.",
+};
 
 export default async function TermsPage() {
   const version = await getCurrentTermsVersion();

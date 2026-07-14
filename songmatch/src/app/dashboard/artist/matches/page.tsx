@@ -15,7 +15,14 @@ export default async function ArtistMatchesPage() {
 
   const matches = await db.match.findMany({
     where: { artistProfileId: profile.id },
-    include: { submission: true, songwriter: true, termsVersion: true },
+    select: {
+      id: true,
+      copyrightSharePercent: true,
+      createdAt: true,
+      submission: { select: { title: true } },
+      songwriter: { select: { displayName: true } },
+      termsVersion: { select: { versionLabel: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
 

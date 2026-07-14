@@ -5,6 +5,8 @@ import { getCurrentTermsVersion } from "@/lib/terms";
 // Artists' swipe deck: submissions not yet swiped by this artist, not yet
 // matched to anyone, and eligible for this artist — either broadcast to all
 // artists, or specifically targeted at this artist by the songwriter.
+const DECK_BATCH_SIZE = 200;
+
 export async function getArtistDeck(artistProfileId: string) {
   return db.submission.findMany({
     where: {
@@ -20,10 +22,17 @@ export async function getArtistDeck(artistProfileId: string) {
         },
       ],
     },
-    include: {
-      songwriter: { select: { displayName: true, bio: true } },
+    select: {
+      id: true,
+      title: true,
+      lyricsBody: true,
+      genreTags: true,
+      imageUrl: true,
+      audioUrl: true,
+      songwriter: { select: { displayName: true } },
     },
     orderBy: { createdAt: "asc" },
+    take: DECK_BATCH_SIZE,
   });
 }
 
@@ -64,8 +73,21 @@ export async function recordArtistSwipe(
   submissionId: string,
   decision: "LIKE" | "PASS"
 ) {
-  const deck = await getArtistDeck(artistProfileId);
-  const eligible = deck.some((s) => s.id === submissionId);
+  const eligible = await db.submission.findFirst({
+    where: {
+      id: submissionId,
+      match: null,
+      artistSwipes: { none: { artistProfileId } },
+      OR: [
+        { targetMode: "ALL_ARTISTS" },
+        {
+          targetMode: "SPECIFIC",
+          submissionTargets: { some: { artistProfileId, decision: "LIKE" } },
+        },
+      ],
+    },
+    select: { id: true, songwriterProfileId: true },
+  });
   if (!eligible) {
     throw new Error("This submission is not currently in your deck.");
   }
@@ -77,15 +99,12 @@ export async function recordArtistSwipe(
       });
 
       if (decision === "LIKE") {
-        const submission = await tx.submission.findUniqueOrThrow({
-          where: { id: submissionId },
-        });
         const termsVersion = await getCurrentTermsVersion();
 
         await tx.match.create({
           data: {
             submissionId,
-            songwriterProfileId: submission.songwriterProfileId,
+            songwriterProfileId: eligible.songwriterProfileId,
             artistProfileId,
             copyrightSharePercent: COPYRIGHT_SHARE_PERCENT,
             termsVersionId: termsVersion.id,

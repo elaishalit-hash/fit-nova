@@ -85,6 +85,8 @@ model Submission {
   submissionTargets SubmissionTarget[]
   artistSwipes      ArtistSwipe[]
   match             Match?
+
+  @@index([createdAt])
 }
 
 // Songwriter-side deck: songwriter swipes through artist profiles for one SPECIFIC-mode submission.
@@ -127,6 +129,9 @@ model Match {
   createdAt             DateTime          @default(now())
 
   messages Message[]
+
+  @@index([artistProfileId])
+  @@index([songwriterProfileId])
 }
 
 model TermsVersion {
@@ -159,4 +164,6 @@ model Message {
   sender       User     @relation(fields: [senderUserId], references: [id])
   body         String
   createdAt    DateTime @default(now())
+
+  @@index([matchId])
 }

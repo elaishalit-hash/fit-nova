@@ -21,6 +21,7 @@ export function SubmissionForm() {
           name="title"
           type="text"
           required
+          maxLength={200}
           data-testid="submission-title"
           className="field"
         />
@@ -31,6 +32,7 @@ export function SubmissionForm() {
         <textarea
           name="lyricsBody"
           rows={8}
+          maxLength={20000}
           data-testid="submission-lyrics"
           className="field font-mono"
         />
@@ -42,6 +44,7 @@ export function SubmissionForm() {
           name="genreTags"
           type="text"
           placeholder="pop, ballad"
+          maxLength={200}
           className="field"
         />
       </label>
@@ -81,6 +84,7 @@ export function SubmissionForm() {
       </label>
 
       <fieldset className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <legend className="sr-only">Who should see this submission</legend>
         <label className="flex cursor-pointer flex-col gap-1 rounded-xl border border-ink-200 bg-ink-25 p-4 text-sm transition-colors has-[:checked]:border-flame-400 has-[:checked]:bg-flame-50">
           <span className="flex items-center gap-2 font-semibold text-ink-900">
             <input

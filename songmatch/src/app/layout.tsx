@@ -21,8 +21,12 @@ const fraunces = Fraunces({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://songmatch-production-6c95.up.railway.app"),
-  title: "SongMatch",
-  description: "Where lyrics find their voice.",
+  title: {
+    default: "SongMatch — Where lyrics find their voice.",
+    template: "%s | SongMatch",
+  },
+  description:
+    "SongMatch connects songwriters with artists. Upload your lyrics, aim them at the artists you dream of hearing them, or broadcast to everyone. Swipe, match, and connect.",
 };
 
 export default function RootLayout({

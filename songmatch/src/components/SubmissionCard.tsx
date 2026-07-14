@@ -19,7 +19,7 @@ export function SubmissionCard({
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={submission.imageUrl}
-          alt=""
+          alt={`Cover art for ${submission.title}`}
           data-testid="deck-card-image"
           className="h-36 w-full rounded-xl object-cover"
         />

@@ -95,7 +95,7 @@ export default function Home() {
           <div className="mt-10 grid gap-8 sm:grid-cols-3">
             {steps.map((step) => (
               <div key={step.n} className="text-center sm:text-left">
-                <span className="font-display text-3xl font-semibold text-flame-300">
+                <span className="font-display text-3xl font-semibold text-flame-600">
                   {step.n}
                 </span>
                 <h3 className="mt-2 text-lg font-semibold text-ink-900">

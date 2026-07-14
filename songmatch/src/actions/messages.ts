@@ -6,6 +6,8 @@ import { db } from "@/lib/db";
 
 export type MessageFormState = { error?: string };
 
+const MESSAGE_MAX = 5000;
+
 export async function sendMessageAction(
   matchId: string,
   _prevState: MessageFormState | undefined,
@@ -34,6 +36,9 @@ export async function sendMessageAction(
   const body = String(formData.get("body") ?? "").trim();
   if (!body) {
     return { error: "Message can't be empty." };
+  }
+  if (body.length > MESSAGE_MAX) {
+    return { error: `Message must be ${MESSAGE_MAX} characters or fewer.` };
   }
 
   await db.message.create({

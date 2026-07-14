@@ -1,8 +1,13 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { getCurrentTermsVersion, hasAcceptedCurrentTerms } from "@/lib/terms";
 import { TermsBody } from "@/components/TermsBody";
 import { acceptTermsAction } from "@/actions/terms";
+
+export const metadata: Metadata = {
+  title: "Accept the Terms",
+};
 
 export default async function AcceptTermsPage() {
   const session = await auth();

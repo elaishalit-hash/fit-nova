@@ -20,6 +20,7 @@ export async function GET(
       headers: {
         "Content-Type": getMimeType(id),
         "Content-Disposition": `${disposition}; filename="${id}"`,
+        "Cache-Control": "private, max-age=31536000, immutable",
       },
     });
   } catch {

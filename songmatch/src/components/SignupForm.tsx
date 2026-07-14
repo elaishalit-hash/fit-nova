@@ -9,6 +9,7 @@ export function SignupForm() {
   return (
     <form action={action} className="flex flex-col gap-5">
       <fieldset className="grid grid-cols-2 gap-3">
+        <legend className="sr-only">I am a...</legend>
         <label className="group flex cursor-pointer flex-col items-center gap-1 rounded-xl border border-ink-200 bg-ink-25 p-4 text-sm transition-colors has-[:checked]:border-flame-400 has-[:checked]:bg-flame-50">
           <input type="radio" name="role" value="SONGWRITER" defaultChecked />
           <span className="font-semibold text-ink-900">Songwriter</span>
@@ -27,6 +28,7 @@ export function SignupForm() {
           name="name"
           type="text"
           required
+          maxLength={100}
           data-testid="signup-name"
           className="field"
         />

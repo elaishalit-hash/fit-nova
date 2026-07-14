@@ -1,5 +1,12 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { SignupForm } from "@/components/SignupForm";
+
+export const metadata: Metadata = {
+  title: "Sign up",
+  description:
+    "Join SongMatch as a songwriter pitching lyrics or an artist discovering new material.",
+};
 
 export default function SignupPage() {
   return (

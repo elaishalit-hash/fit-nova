@@ -1,7 +1,13 @@
 import { notFound, redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { MessageThread } from "@/components/MessageThread";
+
+export const metadata: Metadata = {
+  title: "Match",
+  robots: { index: false, follow: false },
+};
 
 export default async function MatchDetailPage({
   params,
@@ -19,10 +25,13 @@ export default async function MatchDetailPage({
     where: { id: matchId },
     include: {
       submission: true,
-      songwriter: { include: { user: true } },
-      artist: { include: { user: true } },
+      songwriter: true,
+      artist: true,
       termsVersion: true,
-      messages: { orderBy: { createdAt: "asc" }, include: { sender: true } },
+      messages: {
+        orderBy: { createdAt: "asc" },
+        include: { sender: { select: { name: true } } },
+      },
     },
   });
 
@@ -75,7 +84,7 @@ export default async function MatchDetailPage({
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={match.submission.imageUrl}
-          alt=""
+          alt={`Cover art for ${match.submission.title}`}
           className="h-56 w-full rounded-2xl object-cover shadow-card"
         />
       )}

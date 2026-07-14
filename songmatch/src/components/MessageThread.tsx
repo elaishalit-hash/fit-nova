@@ -57,7 +57,9 @@ export function MessageThread({
           name="body"
           type="text"
           required
+          maxLength={5000}
           placeholder="Write a message..."
+          aria-label="Write a message"
           data-testid="message-input"
           className="field flex-1"
         />

@@ -60,7 +60,7 @@ export default async function SongwriterDashboardPage() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={s.imageUrl}
-                  alt=""
+                  alt={`Cover art for ${s.title}`}
                   className="h-16 w-16 shrink-0 rounded-lg object-cover"
                 />
               ) : (

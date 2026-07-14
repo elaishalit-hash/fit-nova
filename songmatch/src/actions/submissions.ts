@@ -10,6 +10,11 @@ export type SubmissionFormState = { error?: string };
 
 const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "gif"];
 const AUDIO_EXTENSIONS = ["mp3", "wav", "m4a", "ogg", "aac", "flac"];
+const DOCUMENT_EXTENSIONS = ["pdf", "txt"];
+
+const TITLE_MAX = 200;
+const LYRICS_MAX = 20000;
+const GENRE_TAGS_MAX = 200;
 
 export async function createSubmissionAction(
   _prevState: SubmissionFormState | undefined,
@@ -36,6 +41,15 @@ export async function createSubmissionAction(
   if (!title) {
     return { error: "Title is required." };
   }
+  if (title.length > TITLE_MAX) {
+    return { error: `Title must be ${TITLE_MAX} characters or fewer.` };
+  }
+  if (lyricsBody.length > LYRICS_MAX) {
+    return { error: `Lyrics must be ${LYRICS_MAX} characters or fewer.` };
+  }
+  if (genreTags.length > GENRE_TAGS_MAX) {
+    return { error: `Genre tags must be ${GENRE_TAGS_MAX} characters or fewer.` };
+  }
   if (targetMode !== "SPECIFIC" && targetMode !== "ALL_ARTISTS") {
     return { error: "Choose a targeting mode." };
   }
@@ -50,7 +64,9 @@ export async function createSubmissionAction(
   try {
     if (file instanceof File && file.size > 0) {
       const buffer = Buffer.from(await file.arrayBuffer());
-      const saved = await saveFile(buffer, file.name);
+      const saved = await saveFile(buffer, file.name, {
+        allowedExtensions: DOCUMENT_EXTENSIONS,
+      });
       fileUrl = saved.url;
       fileName = file.name;
     }
